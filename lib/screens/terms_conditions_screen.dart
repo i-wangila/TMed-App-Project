@@ -62,7 +62,7 @@ class TermsConditionsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text('Email: support@tmed.com'),
-            const Text('Phone: +254 700 123 456'),
+            const Text('Phone: +254740109195'),
             const Text('Address: Nairobi, Kenya'),
           ],
         ),

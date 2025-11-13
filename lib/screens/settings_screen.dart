@@ -1,90 +1,65 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive_utils.dart';
+import 'manage_account_screen.dart';
+import '../services/notification_preferences_service.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = true;
-  bool _emailNotifications = true;
-  bool _smsNotifications = false;
-  bool _biometricLogin = false;
-  String _language = 'English';
-  String _theme = 'Light';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text(
+          'Settings',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          ResponsiveUtils.getResponsiveSpacing(context, 16),
+        ),
         children: [
-          _buildSectionHeader('Notifications'),
-          _buildSwitchTile(
-            'Push Notifications',
-            'Receive appointment reminders and updates',
-            _notificationsEnabled,
-            (value) => setState(() => _notificationsEnabled = value),
+          _buildSettingsItem(
+            context,
+            icon: Icons.manage_accounts,
+            title: 'Manage Account',
+            subtitle: 'Update your profile and account settings',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManageAccountScreen(),
+                ),
+              );
+            },
           ),
-          _buildSwitchTile(
-            'Email Notifications',
-            'Receive notifications via email',
-            _emailNotifications,
-            (value) => setState(() => _emailNotifications = value),
+          _buildSettingsItem(
+            context,
+            icon: Icons.notifications,
+            title: 'Manage Notifications',
+            subtitle: 'Control your notification preferences',
+            onTap: () {
+              _showNotificationSettings(context);
+            },
           ),
-          _buildSwitchTile(
-            'SMS Notifications',
-            'Receive notifications via SMS',
-            _smsNotifications,
-            (value) => setState(() => _smsNotifications = value),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Security'),
-          _buildSwitchTile(
-            'Biometric Login',
-            'Use fingerprint or face ID to login',
-            _biometricLogin,
-            (value) => setState(() => _biometricLogin = value),
-          ),
-          _buildSettingsTile(
-            'Change Password',
-            'Update your account password',
-            Icons.lock,
-            () => _showChangePasswordDialog(),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Preferences'),
-          _buildDropdownTile('Language', _language, [
-            'English',
-            'Swahili',
-            'French',
-          ], (value) => setState(() => _language = value!)),
-          _buildDropdownTile('Theme', _theme, [
-            'Light',
-            'Dark',
-            'System',
-          ], (value) => setState(() => _theme = value!)),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Data & Privacy'),
-          _buildSettingsTile(
-            'Download My Data',
-            'Export your personal data',
-            Icons.download,
-            () => _showDataExportDialog(),
-          ),
-          _buildSettingsTile(
-            'Delete Account',
-            'Permanently delete your account',
-            Icons.delete_forever,
-            () => _showDeleteAccountDialog(),
+          _buildSettingsItem(
+            context,
+            icon: Icons.delete_forever,
+            title: 'Delete/Deactivate Account',
+            subtitle:
+                'Permanently delete or temporarily deactivate your account',
+            onTap: () {
+              _showDeleteDeactivateDialog(context);
+            },
             isDestructive: true,
           ),
         ],
@@ -92,193 +67,330 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildSwitchTile(
-    String title,
-    String subtitle,
-    bool value,
-    ValueChanged<bool> onChanged,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: SwitchListTile(
-        title: Text(title),
-        subtitle: Text(subtitle),
-        value: value,
-        onChanged: onChanged,
-        activeColor: Colors.black,
-      ),
-    );
-  }
-
-  Widget _buildSettingsTile(
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onTap, {
+  Widget _buildSettingsItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isDestructive ? Colors.red : Colors.grey[600],
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(
+          ResponsiveUtils.getResponsiveSpacing(context, 16),
         ),
-        title: Text(
-          title,
-          style: TextStyle(color: isDestructive ? Colors.red : Colors.black),
+        margin: EdgeInsets.only(
+          bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
         ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDestructive ? Colors.red[200]! : Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDestructive ? Colors.red[50] : Colors.blue[50],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: isDestructive ? Colors.red[700] : Colors.blue[700],
+                size: 24,
+              ),
+            ),
+            SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        16,
+                      ),
+                      fontWeight: FontWeight.w600,
+                      color: isDestructive ? Colors.red[700] : Colors.black,
+                    ),
+                  ),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 4),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        13,
+                      ),
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDropdownTile(
-    String title,
-    String value,
-    List<String> options,
-    ValueChanged<String?> onChanged,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(title),
-        trailing: DropdownButton<String>(
-          value: value,
-          onChanged: onChanged,
-          items: options.map((String option) {
-            return DropdownMenuItem<String>(value: option, child: Text(option));
-          }).toList(),
-        ),
+  void _showNotificationSettings(BuildContext context) async {
+    // Load current preferences
+    final prefs = await NotificationPreferencesService.getAllPreferences();
+
+    if (!context.mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            bool pushNotifications = prefs['push'] ?? true;
+            bool emailNotifications = prefs['email'] ?? true;
+            bool smsNotifications = prefs['sms'] ?? false;
+
+            return Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Notification Settings',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: const Text('Push Notifications'),
+                    subtitle: const Text('Receive app notifications'),
+                    value: pushNotifications,
+                    activeColor: Colors.blue,
+                    onChanged: (value) {
+                      setState(() => pushNotifications = value);
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Email Notifications'),
+                    subtitle: const Text('Receive notifications via email'),
+                    value: emailNotifications,
+                    activeColor: Colors.blue,
+                    onChanged: (value) {
+                      setState(() => emailNotifications = value);
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('SMS Notifications'),
+                    subtitle: const Text('Receive notifications via SMS'),
+                    value: smsNotifications,
+                    activeColor: Colors.blue,
+                    onChanged: (value) {
+                      setState(() => smsNotifications = value);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        // Save preferences
+                        await NotificationPreferencesService.setPushNotifications(
+                          pushNotifications,
+                        );
+                        await NotificationPreferencesService.setEmailNotifications(
+                          emailNotifications,
+                        );
+                        await NotificationPreferencesService.setSmsNotifications(
+                          smsNotifications,
+                        );
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Notification settings saved'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Save Changes'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  void _showChangePasswordDialog() {
+  void _showDeleteDeactivateDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Change Password'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Current Password',
-                border: OutlineInputBorder(),
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Account Management',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'What would you like to do with your account?',
+            style: TextStyle(color: Colors.black),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showDeactivateConfirmation(context);
+              },
+              child: const Text(
+                'Deactivate',
+                style: TextStyle(color: Colors.orange),
               ),
             ),
-            SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'New Password',
-                border: OutlineInputBorder(),
-              ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showDeleteConfirmation(context);
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
-            SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Confirm New Password',
-                border: OutlineInputBorder(),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeactivateConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Deactivate Account',
+            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Your account will be temporarily deactivated. You can reactivate it anytime by logging in again.',
+            style: TextStyle(color: Colors.black),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Account deactivated successfully'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              },
+              child: const Text(
+                'Deactivate',
+                style: TextStyle(color: Colors.orange),
               ),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password updated successfully'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Update'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  void _showDataExportDialog() {
+  void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Export Data'),
-        content: const Text(
-          'Your data will be prepared and sent to your registered email address within 24 hours.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Data export request submitted'),
-                  backgroundColor: Colors.blue,
-                ),
-              );
-            },
-            child: const Text('Export'),
+          title: const Text(
+            'Delete Account',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+          content: const Text(
+            'This action is permanent and cannot be undone. All your data will be permanently deleted.',
+            style: TextStyle(color: Colors.black),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Account deletion request submitted'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Account deleted successfully'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              child: const Text(
+                'Delete Permanently',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

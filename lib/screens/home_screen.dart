@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'appointments_screen.dart';
-import 'profile_drawer.dart';
+import 'category_screen.dart';
 import 'inbox_screen.dart';
-
+import '../utils/responsive_utils.dart';
 import 'provider_profile_screen.dart';
 import 'facility_profile_screen.dart';
 import '../services/healthcare_provider_service.dart';
 import '../services/healthcare_facility_service.dart';
 import '../services/message_service.dart';
+import '../models/healthcare_facility.dart';
+import 'wallet_screen.dart';
+import 'document_management_screen.dart';
+import 'terms_conditions_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'contact_us_screen.dart';
+import 'about_screen.dart';
+import 'become_provider_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,18 +26,64 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectedNavIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    MessageService.addListener(_onMessageUpdate);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    MessageService.removeListener(_onMessageUpdate);
+    super.dispose();
+  }
+
+  void _onMessageUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.white,
-      endDrawer: const ProfileDrawer(),
+      endDrawer: _buildProfileMenuDrawer(),
       body: _getSelectedScreen(),
       bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildProfileMenuDrawer() {
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.75,
+      child: SafeArea(
+        child: Column(
+          children: [
+            _buildBecomeProviderBanner(),
+            _buildProfileHeader(),
+            Expanded(
+              child: SingleChildScrollView(child: _buildProfileMenuList()),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -40,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return const InboxScreen();
       case 3:
-        return _buildHomeContent(); // Keep showing home when profile is selected
+        return _buildHomeContent();
       default:
         return _buildHomeContent();
     }
@@ -56,59 +112,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSection(
-                    title: 'Hospitals and Clinics',
-                    items: [
-                      {'title': 'Nairobi Hospital', 'rating': '4.93'},
-                      {
-                        'title': 'Aga Khan University Hospital',
-                        'rating': '4.85',
-                      },
-                      {'title': 'Kenyatta National Hospital', 'rating': '4.72'},
-                      {'title': 'MP Shah Hospital', 'rating': '4.68'},
-                      {
-                        'title': 'Gertrudes Children Hospital',
-                        'rating': '4.91',
-                      },
-                      {'title': 'Karen Hospital', 'rating': '4.78'},
-                      {'title': 'Mater Hospital', 'rating': '4.65'},
-                      {'title': 'Coptic Hospital', 'rating': '4.82'},
-                      {'title': 'Avenue Healthcare', 'rating': '4.76'},
-                      {'title': 'Parklands Clinic', 'rating': '4.69'},
-                    ],
-                  ),
-                  _buildSection(
-                    title: 'Pharmacies',
-                    items: [
-                      {'title': 'Goodlife Pharmacy', 'rating': '4.91'},
-                      {'title': 'Haltons Pharmacy', 'rating': '4.94'},
-                      {'title': 'Mediplus Pharmacy', 'rating': '4.78'},
-                      {'title': 'Carrefour Pharmacy', 'rating': '4.65'},
-                      {'title': 'Dawa Life Pharmacy', 'rating': '4.82'},
-                      {'title': 'Boots Pharmacy', 'rating': '4.77'},
-                      {'title': 'Alpha Pharmacy', 'rating': '4.83'},
-                      {'title': 'Wellness Pharmacy', 'rating': '4.71'},
-                      {'title': 'City Pharmacy', 'rating': '4.66'},
-                      {'title': 'Health Plus Pharmacy', 'rating': '4.89'},
-                    ],
-                  ),
+                  _buildHospitalsSection(),
+                  _buildPharmaciesSection(),
                   _buildProvidersSection(),
-                  _buildSection(
-                    title: 'Laboratories',
-                    items: [
-                      {'title': 'Lancet Kenya', 'rating': '4.81'},
-                      {'title': 'Pathologists Lancet Kenya', 'rating': '5.0'},
-                      {'title': 'Metropol Laboratory', 'rating': '4.73'},
-                      {'title': 'Ampath Laboratory', 'rating': '4.67'},
-                      {'title': 'Quest Laboratory', 'rating': '4.84'},
-                      {'title': 'Medlab East Africa', 'rating': '4.79'},
-                      {'title': 'Diagnostic Laboratory', 'rating': '4.72'},
-                      {'title': 'Healthline Laboratory', 'rating': '4.85'},
-                      {'title': 'Precision Lab Services', 'rating': '4.76'},
-                      {'title': 'Advanced Diagnostics', 'rating': '4.91'},
-                    ],
+                  _buildLaboratoriesSection(),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 80),
                   ),
-                  const SizedBox(height: 80),
                 ],
               ),
             ),
@@ -118,45 +128,360 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHomeHeader() {
+  Widget _buildProfileHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+      padding: EdgeInsets.all(
+        ResponsiveUtils.getResponsiveSpacing(context, 20),
+      ),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.grey[300],
+                child: Text(
+                  'II',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey[300]!, width: 2),
+                  ),
+                  child: Icon(Icons.camera_alt, size: 16, color: Colors.black),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'i i',
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      24,
+                    ),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'i@gmail.com',
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      14,
+                    ),
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBecomeProviderBanner() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context); // Close the drawer
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const BecomeProviderScreen()),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+          vertical: ResponsiveUtils.getResponsiveSpacing(context, 8),
+        ),
+        padding: EdgeInsets.all(
+          ResponsiveUtils.getResponsiveSpacing(context, 16),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.medical_services, color: Colors.blue[700], size: 24),
+            SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 12)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Become a Healthcare Provider',
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        16,
+                      ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[900],
+                    ),
+                  ),
+                  Text(
+                    'Join our network of professionals',
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        12,
+                      ),
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileMenuList() {
+    return Column(
+      children: [
+        _buildProfileMenuItem(
+          icon: Icons.home,
+          title: 'Home',
+          onTap: () {
+            setState(() {
+              _selectedNavIndex = 0;
+            });
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.account_balance_wallet,
+          title: 'Wallet',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const WalletScreen()),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.medical_information,
+          title: 'Medical Records',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const DocumentManagementScreen(),
+              ),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.description,
+          title: 'Prescription Reports',
+          onTap: () {
+            // Navigate to prescription reports
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.article,
+          title: 'Terms & Conditions',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TermsConditionsScreen(),
+              ),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.privacy_tip,
+          title: 'Privacy Policy',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PrivacyPolicyScreen(),
+              ),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.help,
+          title: 'Faqs',
+          onTap: () {
+            // Navigate to FAQs
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.contact_support,
+          title: 'Contact Us',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ContactUsScreen()),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.settings,
+          title: 'Settings',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.info,
+          title: 'About',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AboutScreen()),
+            );
+          },
+        ),
+        _buildProfileMenuItem(
+          icon: Icons.logout,
+          title: 'Logout',
+          onTap: () {
+            _showLogoutDialog();
+          },
+          isLogout: true,
+        ),
+        SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 80)),
+      ],
+    );
+  }
+
+  Widget _buildProfileMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isLogout = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.getResponsiveSpacing(context, 20),
+          vertical: ResponsiveUtils.getResponsiveSpacing(context, 16),
+        ),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isLogout ? Colors.red : Colors.black,
+              size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+            ),
+            SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                  color: isLogout ? Colors.red : Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey[400],
+              size: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text(
+          'Logout',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(color: Colors.black),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeHeader() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+        vertical: ResponsiveUtils.getResponsiveSpacing(context, 16),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'TMed',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+          Expanded(
+            child: Text(
+              'TMed',
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
           Stack(
             children: [
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.notifications_outlined,
                   color: Colors.black,
+                  size: ResponsiveUtils.isSmallScreen(context) ? 22 : 24,
                 ),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const InboxScreen(),
-                    ),
-                  );
+                  setState(() {
+                    _selectedNavIndex = 2; // Navigate to Inbox
+                  });
                 },
               ),
               if (MessageService.getUnreadCount() > 0)
@@ -165,21 +490,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: 8,
                   child: Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
                     ),
                     constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
+                      minWidth: 14,
+                      minHeight: 14,
                     ),
                     child: Text(
                       '${MessageService.getUnreadCount()}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 8),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -199,31 +520,41 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+            vertical: ResponsiveUtils.getResponsiveSpacing(context, 8),
+          ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
+                child: ResponsiveUtils.safeText(
                   title,
-                  style: const TextStyle(
-                    fontSize: 22,
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      18,
+                    ),
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
+                  maxLines: 2,
                 ),
               ),
               GestureDetector(
                 onTap: () => _navigateToCategory(title, items),
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(
+                    ResponsiveUtils.getResponsiveSpacing(context, 8),
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey[300]!, width: 1),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.chevron_right,
-                    size: 20,
+                    size: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
                     color: Colors.black,
                   ),
                 ),
@@ -232,16 +563,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         SizedBox(
-          height: 320,
+          height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: items.length,
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+            ),
+            itemCount: items.length > 8 ? 8 : items.length,
             itemBuilder: (context, index) {
               return _buildHealthcareCard(
                 title: items[index]['title']!,
                 rating: items[index]['rating']!,
                 category: title,
+                imageUrl: items[index]['imageUrl'],
               );
             },
           ),
@@ -254,6 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String rating,
     required String category,
+    String? imageUrl,
   }) {
     IconData getIcon() {
       if (category.contains('Hospital')) return Icons.local_hospital;
@@ -266,48 +601,59 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () => _navigateToProviderProfile(title, category),
       child: Container(
-        width: 300,
-        margin: const EdgeInsets.only(right: 16),
+        width: 160,
+        margin: EdgeInsets.only(
+          right: ResponsiveUtils.getResponsiveSpacing(context, 16),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
                 Container(
-                  height: 240,
+                  height: 120,
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.grey[200]!, width: 1),
                   ),
-                  child: Center(
-                    child: Icon(getIcon(), size: 80, color: Colors.grey[600]),
-                  ),
+                  child: _buildFacilityImage(imageUrl, getIcon()),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 6)),
+            ResponsiveUtils.safeText(
               title,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 15),
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 2)),
             Row(
               children: [
-                const Icon(Icons.star, size: 14, color: Colors.black),
-                const SizedBox(width: 2),
-                Text(
-                  rating,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
+                Icon(
+                  Icons.star,
+                  size: ResponsiveUtils.isSmallScreen(context) ? 12 : 14,
+                  color: Colors.black,
+                ),
+                SizedBox(
+                  width: ResponsiveUtils.getResponsiveSpacing(context, 2),
+                ),
+                Flexible(
+                  child: Text(
+                    rating,
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        15,
+                      ),
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -318,17 +664,57 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildFacilityImage(String? imageUrl, IconData defaultIcon) {
+    if (imageUrl != null &&
+        imageUrl.isNotEmpty &&
+        imageUrl != 'https://via.placeholder.com/200') {
+      if (imageUrl.startsWith('/')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.file(
+            File(imageUrl),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Icon(defaultIcon, size: 80, color: Colors.grey[600]),
+              );
+            },
+          ),
+        );
+      } else {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Icon(defaultIcon, size: 80, color: Colors.grey[600]),
+              );
+            },
+          ),
+        );
+      }
+    } else {
+      return Center(
+        child: Icon(defaultIcon, size: 80, color: Colors.grey[600]),
+      );
+    }
+  }
+
   void _navigateToProviderProfile(String title, String category) {
-    // For doctors, navigate to their profile
     if (category.contains('Doctors')) {
-      // Extract provider name and find matching provider
       String providerName = title;
       final providers = HealthcareProviderService.getAllProviders();
       final provider = providers.firstWhere(
         (p) => p.name.toLowerCase().contains(
           providerName.toLowerCase().split(' - ')[0],
         ),
-        orElse: () => providers.first, // Fallback to first provider
+        orElse: () => providers.first,
       );
 
       Navigator.push(
@@ -338,9 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } else {
-      // For facilities (hospitals, pharmacies, labs), navigate to facility profile
       final facility = HealthcareFacilityService.getFacilityByName(title);
-
       if (facility != null) {
         Navigator.push(
           context,
@@ -349,27 +733,244 @@ class _HomeScreenState extends State<HomeScreen> {
                 FacilityProfileScreen(facilityId: facility.id),
           ),
         );
-      } else {
-        // Fallback: show message or navigate to category detail
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$title profile coming soon'),
-            backgroundColor: Colors.blue,
-          ),
-        );
       }
     }
+  }
+
+  void _navigateToCategory(String title, List<Map<String, String>> items) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            CategoryScreen(title: title, items: items, category: title),
+      ),
+    );
+  }
+
+  Widget _buildProvidersSection() {
+    final providers = HealthcareProviderService.getAllProviders();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+            vertical: ResponsiveUtils.getResponsiveSpacing(context, 8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: ResponsiveUtils.safeText(
+                  'Doctors, Clinicians, Nutritionists and Physiotherapists',
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      18,
+                    ),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  maxLines: 2,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _navigateToCategory(
+                  'Doctors, Clinicians, Nutritionists and Physiotherapists',
+                  providers
+                      .map(
+                        (p) => {
+                          'title': '${p.name} - ${p.specialization}',
+                          'rating': p.rating.toStringAsFixed(1),
+                        },
+                      )
+                      .toList(),
+                ),
+                child: Container(
+                  padding: EdgeInsets.all(
+                    ResponsiveUtils.getResponsiveSpacing(context, 8),
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey[300]!, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+            ),
+            itemCount: providers.length > 8 ? 8 : providers.length,
+            itemBuilder: (context, index) {
+              final provider = providers[index];
+              return _buildProviderCard(provider);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProviderCard(provider) {
+    return GestureDetector(
+      onTap: () => _navigateToProviderProfile(provider.name, 'Doctors'),
+      child: Container(
+        width: 160,
+        margin: EdgeInsets.only(
+          right: ResponsiveUtils.getResponsiveSpacing(context, 16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!, width: 1),
+                  ),
+                  child: _buildProviderImage(provider),
+                ),
+              ],
+            ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 6)),
+            ResponsiveUtils.safeText(
+              provider.name,
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 15),
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+              maxLines: 1,
+            ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 1)),
+            ResponsiveUtils.safeText(
+              provider.specialization,
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
+                fontWeight: FontWeight.w400,
+                color: Colors.grey[600],
+              ),
+              maxLines: 1,
+            ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 2)),
+            Row(
+              children: [
+                Icon(
+                  Icons.star,
+                  size: ResponsiveUtils.isSmallScreen(context) ? 12 : 14,
+                  color: Colors.black,
+                ),
+                SizedBox(
+                  width: ResponsiveUtils.getResponsiveSpacing(context, 2),
+                ),
+                Flexible(
+                  child: Text(
+                    provider.rating.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        15,
+                      ),
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProviderImage(provider) {
+    if (provider.profileImageUrl != null &&
+        provider.profileImageUrl != 'https://via.placeholder.com/200' &&
+        provider.profileImageUrl!.startsWith('/')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.file(
+          File(provider.profileImageUrl!),
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultProviderAvatar(provider);
+          },
+        ),
+      );
+    } else if (provider.profileImageUrl != null &&
+        provider.profileImageUrl != 'https://via.placeholder.com/200') {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.network(
+          provider.profileImageUrl!,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultProviderAvatar(provider);
+          },
+        ),
+      );
+    } else {
+      return _buildDefaultProviderAvatar(provider);
+    }
+  }
+
+  Widget _buildDefaultProviderAvatar(provider) {
+    return Center(
+      child: CircleAvatar(
+        radius: 30,
+        backgroundColor: Colors.blue[100],
+        child: Text(
+          provider.name.split(' ').map((e) => e[0]).take(2).join(),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[800],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildBottomNavBar() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.3),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(
+            vertical: ResponsiveUtils.getResponsiveSpacing(context, 8),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -389,7 +990,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         if (index == 3) {
-          // Open profile drawer for profile tab
+          // Profile - open drawer
           _scaffoldKey.currentState?.openEndDrawer();
         } else {
           setState(() {
@@ -403,176 +1004,81 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(
             icon,
             color: isSelected ? Colors.red : Colors.grey[600],
-            size: 26,
+            size: ResponsiveUtils.isSmallScreen(context) ? 22 : 26,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
           Text(
             label,
             style: TextStyle(
               color: isSelected ? Colors.red : Colors.grey[600],
-              fontSize: 11,
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 11),
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  void _navigateToCategory(String title, List<Map<String, String>> items) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: items
-              .map(
-                (item) => ListTile(
-                  title: Text(item['title'] ?? ''),
-                  subtitle: Text(item['subtitle'] ?? ''),
-                  onTap: () => Navigator.pop(context),
-                ),
-              )
-              .toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+  Widget _buildHospitalsSection() {
+    final hospitals = HealthcareFacilityService.getFacilitiesByType(
+      FacilityType.hospital,
     );
-  }
+    final clinics = HealthcareFacilityService.getFacilitiesByType(
+      FacilityType.clinic,
+    );
+    final allHospitalsAndClinics = [...hospitals, ...clinics];
 
-  Widget _buildProvidersSection() {
-    final providers = HealthcareProviderService.getAllProviders();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Doctors, Clinicians, Nutritionists and Physiotherapists',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              GestureDetector(
-                onTap: () => _navigateToCategory(
-                  'Doctors, Clinicians, Nutritionists and Physiotherapists',
-                  providers
-                      .map(
-                        (p) => {
-                          'title': '${p.name} - ${p.specialization}',
-                          'rating': p.rating.toStringAsFixed(1),
-                        },
-                      )
-                      .toList(),
-                ),
-                child: const Text(
-                  'See all',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: providers.length,
-            itemBuilder: (context, index) {
-              final provider = providers[index];
-              return _buildProviderCard(provider);
+    return _buildSection(
+      title: 'Hospitals and Clinics',
+      items: allHospitalsAndClinics
+          .map(
+            (facility) => {
+              'title': facility.name,
+              'rating': facility.rating.toStringAsFixed(2),
+              'imageUrl': facility.imageUrl,
             },
-          ),
-        ),
-      ],
+          )
+          .toList(),
     );
   }
 
-  Widget _buildProviderCard(provider) {
-    return GestureDetector(
-      onTap: () => _navigateToProviderProfile(provider.name, 'Doctors'),
-      child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[200]!, width: 1),
-                  ),
-                  child: Center(
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.blue[100],
-                      child: Text(
-                        provider.name
-                            .split(' ')
-                            .map((e) => e[0])
-                            .take(2)
-                            .join(),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${provider.name} - ${provider.specialization}',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Row(
-              children: [
-                const Icon(Icons.star, size: 14, color: Colors.black),
-                const SizedBox(width: 2),
-                Text(
-                  provider.rating.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+  Widget _buildPharmaciesSection() {
+    final pharmacies = HealthcareFacilityService.getFacilitiesByType(
+      FacilityType.pharmacy,
+    );
+
+    return _buildSection(
+      title: 'Pharmacies',
+      items: pharmacies
+          .map(
+            (facility) => {
+              'title': facility.name,
+              'rating': facility.rating.toStringAsFixed(2),
+              'imageUrl': facility.imageUrl,
+            },
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildLaboratoriesSection() {
+    final laboratories = HealthcareFacilityService.getFacilitiesByType(
+      FacilityType.laboratory,
+    );
+
+    return _buildSection(
+      title: 'Laboratories',
+      items: laboratories
+          .map(
+            (facility) => {
+              'title': facility.name,
+              'rating': facility.rating.toStringAsFixed(2),
+              'imageUrl': facility.imageUrl,
+            },
+          )
+          .toList(),
     );
   }
 }

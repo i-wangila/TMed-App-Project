@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/appointment_service.dart';
-import '../services/review_service.dart';
+import '../services/provider_availability_service.dart';
 import '../services/call_service.dart';
 import '../models/appointment.dart';
-import '../models/message.dart';
+import '../utils/responsive_utils.dart';
 import 'reschedule_appointment_screen.dart';
 import 'rate_provider_screen.dart';
 import 'call_screen.dart';
-import 'chat_screen.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -22,16 +21,30 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appointments = AppointmentService.getAllAppointments();
+    final allCount = appointments.length;
+    final upcomingCount = appointments
+        .where(
+          (apt) =>
+              apt.dateTime.isAfter(DateTime.now()) &&
+              apt.status != AppointmentStatus.completed &&
+              apt.status != AppointmentStatus.cancelled,
+        )
+        .length;
+    final completedCount = appointments
+        .where((apt) => apt.status == AppointmentStatus.completed)
+        .length;
+
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: ResponsiveUtils.getResponsivePadding(context),
             child: Text(
-              'My Appointments',
+              'My Bookings',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
@@ -42,16 +55,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               color: Colors.white,
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(child: _buildTabButton('Upcoming', 0)),
-                        Expanded(child: _buildTabButton('Completed', 1)),
-                        Expanded(child: _buildTabButton('Cancelled', 2)),
-                      ],
-                    ),
-                  ),
+                  _buildTabBar(allCount, upcomingCount, completedCount),
                   Expanded(child: _buildTabContent()),
                 ],
               ),
@@ -62,297 +66,446 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  Widget _buildTabButton(String title, int index) {
+  Widget _buildTabBar(int allCount, int upcomingCount, int completedCount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(child: _buildTabButton('All Bookings', allCount, 0)),
+          const SizedBox(width: 8),
+          Expanded(child: _buildTabButton('Upcoming', upcomingCount, 1)),
+          const SizedBox(width: 8),
+          Expanded(child: _buildTabButton('Completed', completedCount, 2)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabButton(String title, int count, int index) {
     final isSelected = _selectedTabIndex == index;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-      },
+      onTap: () => setState(() => _selectedTabIndex = index),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(
-            color: isSelected ? Colors.grey[800]! : Colors.grey[300]!,
-            width: 1,
-          ),
+          color: isSelected ? Colors.white : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? Border.all(color: Colors.black, width: 1.5)
+              : Border.all(color: Colors.transparent),
         ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? Colors.black : Colors.grey[700],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.black : Colors.grey[400],
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              child: Center(
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildTabContent() {
-    List<Appointment> appointments;
-    String emptyMessage;
-    IconData emptyIcon;
+    final appointments = AppointmentService.getAllAppointments();
+    List<Appointment> filteredAppointments;
 
     switch (_selectedTabIndex) {
-      case 0:
-        appointments = AppointmentService.getUpcomingAppointments();
-        emptyMessage = 'No upcoming appointments';
-        emptyIcon = Icons.calendar_today;
+      case 1: // Upcoming
+        filteredAppointments = appointments
+            .where(
+              (apt) =>
+                  apt.dateTime.isAfter(DateTime.now()) &&
+                  apt.status != AppointmentStatus.completed &&
+                  apt.status != AppointmentStatus.cancelled,
+            )
+            .toList();
         break;
-      case 1:
-        appointments = AppointmentService.getCompletedAppointments();
-        emptyMessage = 'No completed appointments';
-        emptyIcon = Icons.check_circle_outline;
+      case 2: // Completed
+        filteredAppointments = appointments
+            .where((apt) => apt.status == AppointmentStatus.completed)
+            .toList();
         break;
-      case 2:
-        appointments = AppointmentService.getCancelledAppointments();
-        emptyMessage = 'No cancelled appointments';
-        emptyIcon = Icons.cancel_outlined;
-        break;
-      default:
-        appointments = [];
-        emptyMessage = 'No appointments';
-        emptyIcon = Icons.calendar_today;
+      default: // All
+        filteredAppointments = appointments;
     }
 
-    if (appointments.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(emptyIcon, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              emptyMessage,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      );
+    if (filteredAppointments.isEmpty) {
+      return _buildEmptyState();
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: appointments.length,
+      itemCount: filteredAppointments.length,
       itemBuilder: (context, index) {
-        final appointment = appointments[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildAppointmentCard(appointment),
-        );
+        return _buildAppointmentCard(filteredAppointments[index]);
       },
     );
   }
 
-  Widget _buildAppointmentCard(Appointment appointment) {
-    final dateFormat = DateFormat('MMM dd, yyyy - hh:mm a');
-    final communicationType = _getCommunicationTypeText(
-      appointment.communicationType,
-    );
+  Widget _buildEmptyState() {
+    String message;
+    switch (_selectedTabIndex) {
+      case 1:
+        message = 'No upcoming appointments';
+        break;
+      case 2:
+        message = 'No completed appointments';
+        break;
+      default:
+        message = 'No appointments yet';
+    }
 
-    return Material(
-      color: Colors.transparent,
-      child: AbsorbPointer(
-        absorbing: false, // Allow button interactions
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 80,
+            color: Colors.grey[400],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  AbsorbPointer(
-                    child: Text(
-                      appointment.providerName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                  Row(
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 18),
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment appointment) {
+    final isCompleted = appointment.status == AppointmentStatus.completed;
+    final isUpcoming =
+        appointment.dateTime.isAfter(DateTime.now()) &&
+        appointment.status != AppointmentStatus.completed &&
+        appointment.status != AppointmentStatus.cancelled;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with name, ID, and status
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        appointment.providerName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
+                          horizontal: 8,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '#${appointment.id}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(appointment.status),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _getStatusText(appointment.status),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                          '#${appointment.id.split('-').first}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildInfoRow('Description', appointment.description),
-              const SizedBox(height: 8),
-              _buildInfoRow('Communication Type', communicationType),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                'Date & Time',
-                dateFormat.format(appointment.dateTime),
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                'Total Payment',
-                'KES ${appointment.amount.toStringAsFixed(2)} (Paid)',
-              ),
-              const SizedBox(height: 16),
-              _buildActionButtons(appointment),
-            ],
-          ),
+                ),
+                const SizedBox(width: 8),
+                _buildStatusBadge(appointment.status),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Details
+            _buildDetailRow('Description', appointment.description),
+            const SizedBox(height: 8),
+            _buildDetailRow('Type', _getAppointmentType(appointment)),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Communication',
+              _getCommunicationTypeLabel(appointment.communicationType),
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Date & Time',
+              DateFormat('MMM dd, yyyy - hh:mm a').format(appointment.dateTime),
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Total Payment',
+              'KES ${appointment.amount.toStringAsFixed(2)} (Paid)',
+            ),
+            const SizedBox(height: 16),
+            // Action buttons
+            _buildActionButtons(appointment, isUpcoming, isCompleted),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildActionButtons(Appointment appointment) {
-    // Check if appointment is completed and not yet rated
-    final isCompleted = appointment.status == AppointmentStatus.completed;
-    final hasReview = ReviewService.hasUserReviewedAppointment(appointment.id);
-    final isScheduled = appointment.status == AppointmentStatus.scheduled;
+  Widget _buildStatusBadge(AppointmentStatus status) {
+    String label;
+    Color backgroundColor;
+    Color textColor;
 
-    if (isCompleted && !hasReview) {
-      // Show rate provider button for completed unrated appointments
+    switch (status) {
+      case AppointmentStatus.scheduled:
+        label = 'SCHEDULED';
+        backgroundColor = Colors.blue[100]!;
+        textColor = Colors.blue[800]!;
+        break;
+      case AppointmentStatus.completed:
+        label = 'COMP';
+        backgroundColor = Colors.green[100]!;
+        textColor = Colors.green[800]!;
+        break;
+      case AppointmentStatus.cancelled:
+        label = 'CANCELLED';
+        backgroundColor = Colors.red[100]!;
+        textColor = Colors.red[800]!;
+        break;
+      case AppointmentStatus.inProgress:
+        label = 'IN PROGRESS';
+        backgroundColor = Colors.orange[100]!;
+        textColor = Colors.orange[800]!;
+        break;
+      case AppointmentStatus.missed:
+        label = 'MISSED';
+        backgroundColor = Colors.grey[300]!;
+        textColor = Colors.grey[700]!;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      constraints: const BoxConstraints(maxWidth: 100),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            '$label:',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, color: Colors.black),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getAppointmentType(Appointment appointment) {
+    // Determine type based on provider name or description
+    final name = appointment.providerName.toLowerCase();
+    final desc = appointment.description.toLowerCase();
+
+    if (name.contains('hospital') || name.contains('clinic')) {
+      return 'Hospital Appointment';
+    } else if (desc.contains('dental') || name.contains('dental')) {
+      return 'Dental Appointment';
+    } else {
+      return 'Doctor Consultation';
+    }
+  }
+
+  String _getCommunicationTypeLabel(CommunicationType type) {
+    switch (type) {
+      case CommunicationType.video:
+        return 'VIDEO CALL';
+      case CommunicationType.voice:
+        return 'VOICE CALL';
+      case CommunicationType.inPerson:
+        return 'IN-PERSON';
+      case CommunicationType.chat:
+        return 'CHAT';
+    }
+  }
+
+  Widget _buildActionButtons(
+    Appointment appointment,
+    bool isUpcoming,
+    bool isCompleted,
+  ) {
+    if (isCompleted) {
+      // Completed appointments: Book Again and Rate Provider
       return Row(
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () => _handleSecondaryAction(appointment),
+              onPressed: () {
+                // Handle book again
+              },
               style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black,
                 side: const BorderSide(color: Colors.black),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                _getSecondaryButtonText(appointment.status),
-                style: const TextStyle(color: Colors.black),
+              child: const Text(
+                'Book Again',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: () => _rateProvider(appointment),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber[600],
+                backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.star, size: 18),
-                  SizedBox(width: 4),
-                  Text('Rate Provider'),
-                ],
+              icon: const Icon(Icons.star, size: 16),
+              label: const Text(
+                'Rate Provider',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ),
           ),
         ],
       );
-    } else if (isCompleted && hasReview) {
-      // Show rated status for completed rated appointments
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.green[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.green[200]!),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle, color: Colors.green[600], size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Review submitted',
-              style: TextStyle(
-                color: Colors.green[800],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (isScheduled) {
-      // Three buttons for scheduled appointments: Voice Call/Video Call, Reschedule, Cancel
+    } else if (isUpcoming) {
+      // Upcoming appointments: Action button, Reschedule, Cancel
       return Row(
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () => _handlePrimaryAction(appointment),
+              onPressed: () {
+                // Handle action based on communication type
+                if (appointment.communicationType == CommunicationType.video) {
+                  _startVideoCall(appointment);
+                } else if (appointment.communicationType ==
+                    CommunicationType.voice) {
+                  _startVoiceCall(appointment);
+                } else {
+                  _showAppointmentDetails(appointment);
+                }
+              },
               style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black,
                 side: const BorderSide(color: Colors.black),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: Text(
-                _getPrimaryButtonText(appointment),
-                style: const TextStyle(color: Colors.black, fontSize: 12),
+                _getActionButtonLabel(appointment.communicationType),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: OutlinedButton(
-              onPressed: () => _handleSecondaryAction(appointment),
+              onPressed: () => _rescheduleAppointment(appointment),
               style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.blue,
                 side: const BorderSide(color: Colors.blue),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: const Text(
                 'Reschedule',
-                style: TextStyle(color: Colors.blue, fontSize: 12),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ),
@@ -361,51 +514,42 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             child: OutlinedButton(
               onPressed: () => _cancelAppointment(appointment),
               style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.red),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Colors.red, fontSize: 12),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ),
         ],
       );
     } else {
-      // Default buttons for other statuses
+      // Past appointments (not completed)
       return Row(
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () => _handleSecondaryAction(appointment),
+              onPressed: () => _rateProvider(appointment),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.black),
+                foregroundColor: Colors.orange,
+                side: const BorderSide(color: Colors.orange),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                _getSecondaryButtonText(appointment.status),
-                style: const TextStyle(color: Colors.black),
+              child: const Text(
+                'Rate Provider',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _handlePrimaryAction(appointment),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: const BorderSide(color: Colors.black, width: 1),
-                ),
-              ),
-              child: Text(_getPrimaryButtonText(appointment)),
             ),
           ),
         ],
@@ -413,367 +557,143 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     }
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return AbsorbPointer(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getStatusColor(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.scheduled:
-        return Colors.blue;
-      case AppointmentStatus.inProgress:
-        return Colors.orange;
-      case AppointmentStatus.completed:
-        return Colors.green;
-      case AppointmentStatus.cancelled:
-        return Colors.red;
-      case AppointmentStatus.missed:
-        return Colors.grey;
-    }
-  }
-
-  String _getStatusText(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.scheduled:
-        return 'SCHEDULED';
-      case AppointmentStatus.inProgress:
-        return 'IN PROGRESS';
-      case AppointmentStatus.completed:
-        return 'COMPLETED';
-      case AppointmentStatus.cancelled:
-        return 'CANCELLED';
-      case AppointmentStatus.missed:
-        return 'MISSED';
-    }
-  }
-
-  String _getCommunicationTypeText(CommunicationType type) {
+  String _getActionButtonLabel(CommunicationType type) {
     switch (type) {
-      case CommunicationType.video:
-        return 'VIDEO CALL';
-      case CommunicationType.voice:
-        return 'VOICE CALL';
-      case CommunicationType.chat:
-        return 'CHAT';
-      case CommunicationType.inPerson:
-        return 'IN-PERSON';
-    }
-  }
-
-  String _getPrimaryButtonText(Appointment appointment) {
-    switch (appointment.communicationType) {
       case CommunicationType.video:
         return 'Video Call';
       case CommunicationType.voice:
         return 'Voice Call';
-      case CommunicationType.chat:
-        return 'Start Chat';
       case CommunicationType.inPerson:
+        return 'View Details';
+      case CommunicationType.chat:
         return 'View Details';
     }
   }
 
-  String _getSecondaryButtonText(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.scheduled:
-        return 'Reschedule';
-      case AppointmentStatus.completed:
-      case AppointmentStatus.cancelled:
-      case AppointmentStatus.missed:
-        return 'Book Again';
-      case AppointmentStatus.inProgress:
-        return 'View Details';
-    }
-  }
-
-  void _handlePrimaryAction(Appointment appointment) async {
-    switch (appointment.communicationType) {
-      case CommunicationType.video:
-        await _startVideoCall(appointment);
-        break;
-      case CommunicationType.voice:
-        await _startVoiceCall(appointment);
-        break;
-      case CommunicationType.chat:
-        _startChat(appointment);
-        break;
-      case CommunicationType.inPerson:
-        _showAppointmentDetails(appointment);
-        break;
-    }
-  }
-
-  Future<void> _startVideoCall(Appointment appointment) async {
-    try {
-      final callSession = await CallService.startCall(
-        providerId: appointment.providerId,
-        providerName: appointment.providerName,
-        callType: CallType.video,
-        patientId: appointment.patientId,
-        patientName: appointment.patientName,
-      );
-
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CallScreen(callSession: callSession),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start video call: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _startVoiceCall(Appointment appointment) async {
-    try {
-      final callSession = await CallService.startCall(
-        providerId: appointment.providerId,
-        providerName: appointment.providerName,
-        callType: CallType.voice,
-        patientId: appointment.patientId,
-        patientName: appointment.patientName,
-      );
-
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CallScreen(callSession: callSession),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start voice call: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _startChat(Appointment appointment) {
-    // Create a message object for the chat
-    final message = Message(
-      id: 'chat_${appointment.id}',
-      senderId: appointment.providerId,
-      senderName: appointment.providerName,
-      content: 'Hello! I\'m ready for our chat consultation.',
-      timestamp: DateTime.now(),
-      isRead: true,
-      type: MessageType.text,
+  void _startVideoCall(Appointment appointment) async {
+    // Create a video call session
+    final callSession = await CallService.startCall(
+      providerId: appointment.providerId,
+      providerName: appointment.providerName,
+      callType: CallType.video,
+      patientId: 'patient_123', // TODO: Get from user service
+      patientName: 'Current User', // TODO: Get from user service
     );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ChatScreen(message: message)),
+    if (mounted) {
+      // Navigate to call screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CallScreen(callSession: callSession),
+        ),
+      );
+    }
+  }
+
+  void _startVoiceCall(Appointment appointment) async {
+    // Create a voice call session
+    final callSession = await CallService.startCall(
+      providerId: appointment.providerId,
+      providerName: appointment.providerName,
+      callType: CallType.voice,
+      patientId: 'patient_123', // TODO: Get from user service
+      patientName: 'Current User', // TODO: Get from user service
     );
+
+    if (mounted) {
+      // Navigate to call screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CallScreen(callSession: callSession),
+        ),
+      );
+    }
   }
 
   void _showAppointmentDetails(Appointment appointment) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Appointment Details'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Provider: ${appointment.providerName}'),
-            const SizedBox(height: 8),
-            Text(
-              'Date: ${DateFormat('MMM dd, yyyy at hh:mm a').format(appointment.dateTime)}',
-            ),
-            const SizedBox(height: 8),
-            Text('Type: In-Person Consultation'),
-            const SizedBox(height: 8),
-            Text('Description: ${appointment.description}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-    );
-  }
-
-  void _handleSecondaryAction(Appointment appointment) {
-    if (appointment.status == AppointmentStatus.scheduled) {
-      _showRescheduleDialog(appointment);
-    } else {
-      _showBookAgainDialog(appointment);
-    }
-  }
-
-  void _showRescheduleDialog(Appointment appointment) async {
-    final navigator = Navigator.of(context);
-
-    final result = await navigator.push(
-      MaterialPageRoute(
-        builder: (context) => RescheduleAppointmentScreen(
-          appointment: appointment,
-          isBookingAgain: false,
-        ),
-      ),
-    );
-
-    // If rescheduling was successful, refresh the appointments list
-    if (result == true && mounted) {
-      setState(() {
-        // This will trigger a rebuild and refresh the appointments
-      });
-    }
-  }
-
-  void _rateProvider(Appointment appointment) async {
-    final navigator = Navigator.of(context);
-
-    final result = await navigator.push(
-      MaterialPageRoute(
-        builder: (context) => RateProviderScreen(appointment: appointment),
-      ),
-    );
-
-    // If rating was successful, refresh the appointments list
-    if (result == true && mounted) {
-      setState(() {
-        // This will trigger a rebuild and refresh the appointments
-      });
-    }
-  }
-
-  void _showBookAgainDialog(Appointment appointment) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Book Again'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Would you like to book another appointment with ${appointment.providerName}?',
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Previous Appointment:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue[800],
-                      fontSize: 12,
-                    ),
+                  const Text(
+                    'Appointment Details',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    appointment.description,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _getCommunicationTypeText(appointment.communicationType),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildDetailRow('Provider', appointment.providerName),
+              _buildDetailRow(
+                'Date',
+                DateFormat('MMM dd, yyyy').format(appointment.dateTime),
+              ),
+              _buildDetailRow(
+                'Time',
+                DateFormat('hh:mm a').format(appointment.dateTime),
+              ),
+              _buildDetailRow(
+                'Type',
+                _getCommunicationTypeLabel(appointment.communicationType),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-              navigator.pop();
-
-              // Navigate to reschedule screen for booking a new appointment
-              final result = await navigator.push(
-                MaterialPageRoute(
-                  builder: (context) => RescheduleAppointmentScreen(
-                    appointment: appointment,
-                    isBookingAgain: true,
-                  ),
-                ),
-              );
-
-              // If booking was successful, refresh the appointments list
-              if (result == true && mounted) {
-                setState(() {
-                  // This will trigger a rebuild and refresh the appointments
-                });
-
-                // Show success message using captured ScaffoldMessenger
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'New appointment booked with ${appointment.providerName}!',
-                    ),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Book New Appointment'),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  void _rescheduleAppointment(Appointment appointment) async {
+    // Show quick reschedule options first
+    final shouldUseFullScreen = await _showQuickRescheduleOptions(appointment);
+
+    if (shouldUseFullScreen == true) {
+      // Use full reschedule screen
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              RescheduleAppointmentScreen(appointment: appointment),
+        ),
+      );
+
+      // If appointment was rescheduled, refresh the list and switch to upcoming tab
+      if (result == true) {
+        setState(() {
+          _selectedTabIndex = 1; // Switch to "Upcoming" tab
+        });
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment rescheduled successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _cancelAppointment(Appointment appointment) {
@@ -781,107 +701,275 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to cancel your appointment with ${appointment.providerName}?',
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Appointment Details:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red[800],
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    appointment.description,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat(
-                      'MMM dd, yyyy at hh:mm a',
-                    ).format(appointment.dateTime),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Note: Cancellation fees may apply depending on the timing.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
+        content: Text(
+          'Are you sure you want to cancel your appointment with ${appointment.providerName}?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Keep Appointment'),
+            child: const Text('No'),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
+          TextButton(
+            onPressed: () {
+              AppointmentService.cancelAppointment(appointment.id);
               Navigator.pop(context);
-
-              // Cancel the appointment
-              final success = await AppointmentService.cancelAppointment(
-                appointment.id,
+              setState(() {});
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Appointment cancelled successfully'),
+                  backgroundColor: Colors.green,
+                ),
               );
-
-              if (success && mounted) {
-                setState(() {
-                  // This will trigger a rebuild and refresh the appointments
-                });
-
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Appointment with ${appointment.providerName} has been cancelled',
-                    ),
-                    backgroundColor: Colors.orange,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              } else if (mounted) {
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Failed to cancel appointment. Please try again.',
-                    ),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
-              }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Cancel Appointment'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel'),
           ),
         ],
       ),
     );
+  }
+
+  void _rateProvider(Appointment appointment) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RateProviderScreen(appointment: appointment),
+      ),
+    );
+  }
+
+  Future<bool?> _showQuickRescheduleOptions(Appointment appointment) async {
+    // Get available slots for the next few days
+    final today = DateTime.now();
+    final availableDates = <DateTime>[];
+
+    // Check next 7 days for availability
+    for (int i = 1; i <= 7; i++) {
+      final date = today.add(Duration(days: i));
+      if (date.weekday != DateTime.saturday &&
+          date.weekday != DateTime.sunday) {
+        if (ProviderAvailabilityService.isProviderAvailableOnDate(
+          appointment.providerId,
+          date,
+        )) {
+          availableDates.add(date);
+        }
+      }
+    }
+
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Text(
+                    'Quick Reschedule',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select a new date and time for your appointment with ${appointment.providerName}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            // Available dates and times
+            Expanded(
+              child: availableDates.isEmpty
+                  ? _buildNoAvailabilityMessage()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: availableDates.length,
+                      itemBuilder: (context, index) {
+                        final date = availableDates[index];
+                        return _buildQuickDateOption(appointment, date);
+                      },
+                    ),
+            ),
+
+            // Full calendar option
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(Icons.calendar_month),
+                  label: const Text('View Full Calendar'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: Colors.black),
+                    foregroundColor: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoAvailabilityMessage() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.schedule, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No quick slots available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use the full calendar to find more options',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickDateOption(Appointment appointment, DateTime date) {
+    final slots = ProviderAvailabilityService.getAvailableSlots(
+      appointment.providerId,
+      date,
+    );
+
+    if (slots.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat('EEEE, MMM dd').format(date),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: slots.take(6).map((slot) {
+                return _buildQuickTimeSlot(appointment, slot);
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickTimeSlot(Appointment appointment, TimeSlot slot) {
+    return GestureDetector(
+      onTap: slot.isAvailable
+          ? () => _quickReschedule(appointment, slot)
+          : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: slot.isAvailable ? Colors.black : Colors.grey[200],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          DateFormat('h:mm a').format(slot.dateTime),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: slot.isAvailable ? Colors.white : Colors.grey[400],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _quickReschedule(Appointment appointment, TimeSlot slot) async {
+    Navigator.pop(context); // Close bottom sheet
+
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Simulate API delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Reschedule the appointment
+      await AppointmentService.rescheduleAppointment(
+        appointment.id,
+        slot.dateTime,
+      );
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Switch to upcoming tab and show success
+      setState(() {
+        _selectedTabIndex = 1; // Switch to "Upcoming" tab
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Appointment rescheduled to ${DateFormat('MMM dd, yyyy - h:mm a').format(slot.dateTime)}',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Failed to reschedule appointment. Please try again.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

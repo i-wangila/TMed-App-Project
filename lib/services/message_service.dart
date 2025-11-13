@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
 
 class MessageService {
   static const String _storageKey = 'tmed_messages';
   static final List<Message> _messages = [];
+  static final List<VoidCallback> _listeners = [];
 
   // Initialize with default messages if no stored messages exist
   static Future<void> _initializeDefaultMessages() async {
@@ -128,11 +130,13 @@ class MessageService {
     final message = _messages.firstWhere((msg) => msg.id == messageId);
     message.isRead = true;
     await _saveMessages();
+    _notifyListeners();
   }
 
   static Future<void> sendMessage(Message message) async {
     _messages.insert(0, message);
     await _saveMessages();
+    _notifyListeners();
   }
 
   static int getUnreadCount() {
@@ -152,6 +156,21 @@ class MessageService {
       message.isRead = true;
     }
     await _saveMessages();
+    _notifyListeners();
+  }
+
+  // Mark messages as read when inbox is viewed
+  static Future<void> markInboxAsViewed() async {
+    bool hasChanges = false;
+    for (var message in _messages) {
+      if (!message.isRead) {
+        message.isRead = true;
+        hasChanges = true;
+      }
+    }
+    if (hasChanges) {
+      await _saveMessages();
+    }
   }
 
   static Future<void> deleteMessage(String messageId) async {
@@ -197,6 +216,7 @@ class MessageService {
     );
     _messages.insert(0, message);
     await _saveMessages();
+    _notifyListeners();
   }
 
   // Add a message from provider (interactive)
@@ -297,4 +317,19 @@ class MessageService {
 
   // Check if messages are loaded
   static bool get isLoaded => _messages.isNotEmpty;
+
+  // Listener management for real-time updates
+  static void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+
+  static void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+
+  static void _notifyListeners() {
+    for (var listener in _listeners) {
+      listener();
+    }
+  }
 }

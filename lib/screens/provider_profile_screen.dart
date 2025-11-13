@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 import '../models/healthcare_provider.dart';
 import '../models/review.dart';
+import '../models/message.dart';
 import '../services/healthcare_provider_service.dart';
 import '../services/review_service.dart';
+import '../services/call_service.dart';
+import '../services/message_service.dart';
 import 'book_appointment_screen.dart';
-import 'edit_provider_profile_screen.dart';
 import 'provider_reviews_screen.dart';
 import 'provider_reviews_list_screen.dart';
 import 'rate_any_provider_screen.dart';
+import 'call_screen.dart';
+import 'chat_screen.dart';
 
 class ProviderProfileScreen extends StatefulWidget {
   final String providerId;
@@ -87,10 +92,6 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
       foregroundColor: Colors.black,
       actions: [
         IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: () => _editProfile(),
-        ),
-        IconButton(
           icon: Icon(
             provider!.isFavorite ? Icons.favorite : Icons.favorite_border,
             color: provider!.isFavorite ? Colors.red : Colors.black,
@@ -118,17 +119,32 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 60),
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.blue[100],
-                child: Text(
-                  provider!.name.split(' ').map((e) => e[0]).take(2).join(),
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final profileImage = _getProviderProfileImage();
+                  return CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.blue[100],
+                    backgroundImage: profileImage,
+                    onBackgroundImageError: profileImage != null
+                        ? (exception, stackTrace) {}
+                        : null,
+                    child: _shouldShowInitials()
+                        ? Text(
+                            provider!.name
+                                .split(' ')
+                                .map((e) => e[0])
+                                .take(2)
+                                .join(),
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue[800],
+                            ),
+                          )
+                        : null,
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Text(
@@ -231,6 +247,8 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             'Consultation Fee',
             'KES ${provider!.consultationFee.toStringAsFixed(0)}',
           ),
+          const SizedBox(height: 24),
+          _buildActionButtons(),
         ],
       ),
     );
@@ -268,6 +286,284 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: _startVoiceCall,
+            icon: const Icon(Icons.phone, size: 18),
+            label: const Text('Call'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.blue,
+              side: const BorderSide(color: Colors.blue),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: _startChat,
+            icon: const Icon(Icons.message, size: 18),
+            label: const Text('Message'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.orange,
+              side: const BorderSide(color: Colors.orange),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: _getDirections,
+            icon: const Icon(Icons.directions, size: 18),
+            label: const Text('Directions'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.green,
+              side: const BorderSide(color: Colors.green),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _startVoiceCall() async {
+    try {
+      final callSession = await CallService.startCall(
+        providerId: provider!.id,
+        providerName: provider!.name,
+        callType: CallType.voice,
+        patientId: 'current_user_id', // Replace with actual user ID
+        patientName: 'Current User', // Replace with actual user name
+      );
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CallScreen(callSession: callSession),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to start call. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _getDirections() {
+    // Show directions options
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Icon(Icons.directions, size: 24),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Get Directions',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'To: ${provider!.location}',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 24),
+                _buildDirectionOption(
+                  icon: Icons.map,
+                  title: 'Google Maps',
+                  subtitle: 'Open in Google Maps app',
+                  onTap: () => _openInGoogleMaps(),
+                ),
+                const SizedBox(height: 12),
+                _buildDirectionOption(
+                  icon: Icons.navigation,
+                  title: 'Apple Maps',
+                  subtitle: 'Open in Apple Maps (iOS)',
+                  onTap: () => _openInAppleMaps(),
+                ),
+                const SizedBox(height: 12),
+                _buildDirectionOption(
+                  icon: Icons.copy,
+                  title: 'Copy Address',
+                  subtitle: 'Copy location to clipboard',
+                  onTap: () => _copyAddress(),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDirectionOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: Colors.green[700], size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openInGoogleMaps() {
+    Navigator.pop(context);
+    // In a real app, you would use url_launcher to open Google Maps
+    // For now, show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening Google Maps for: ${provider!.location}'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _openInAppleMaps() {
+    Navigator.pop(context);
+    // In a real app, you would use url_launcher to open Apple Maps
+    // For now, show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening Apple Maps for: ${provider!.location}'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+  void _copyAddress() {
+    Navigator.pop(context);
+    // In a real app, you would use Clipboard.setData to copy the address
+    // For now, show a message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Address copied: ${provider!.location}'),
+        backgroundColor: Colors.grey[700],
+      ),
+    );
+  }
+
+  void _startChat() async {
+    try {
+      // Create a message that will appear in the inbox
+      final message = Message(
+        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+        senderId: provider!.id,
+        senderName: provider!.name,
+        content: 'Hello! I would like to start a conversation with you.',
+        timestamp: DateTime.now(),
+        type: MessageType.text,
+        category:
+            MessageCategory.healthcareProvider, // Ensures it's interactive
+        isRead: false,
+      );
+
+      // Add the message to the inbox so it appears when user navigates to inbox
+      await MessageService.addProviderMessage(
+        provider!.id,
+        provider!.name,
+        'Hello! I would like to start a conversation with you.',
+      );
+
+      // Navigate to chat screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ChatScreen(message: message)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to start chat. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildAboutSection() {
@@ -796,18 +1092,24 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
     );
   }
 
-  void _editProfile() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditProviderProfileScreen(provider: provider!),
-      ),
-    );
-
-    if (result != null) {
-      setState(() {
-        provider = result as HealthcareProvider;
-      });
+  ImageProvider? _getProviderProfileImage() {
+    if (provider?.profileImageUrl != null &&
+        provider!.profileImageUrl.isNotEmpty &&
+        provider!.profileImageUrl != 'https://via.placeholder.com/200') {
+      if (provider!.profileImageUrl.startsWith('/')) {
+        // Local file path
+        return FileImage(File(provider!.profileImageUrl));
+      } else {
+        // Network URL
+        return NetworkImage(provider!.profileImageUrl);
+      }
     }
+    return null;
+  }
+
+  bool _shouldShowInitials() {
+    return provider?.profileImageUrl == null ||
+        provider!.profileImageUrl.isEmpty ||
+        provider!.profileImageUrl == 'https://via.placeholder.com/200';
   }
 }

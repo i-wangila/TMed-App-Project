@@ -65,12 +65,77 @@ class AppointmentService {
       description: 'Dermatology consultation',
       endedAt: DateTime.now().subtract(const Duration(days: 3)),
     ),
+    // Clinic appointment
+    Appointment(
+      id: '5',
+      providerId: 'clinic_westlands_01',
+      providerName: 'Westlands Medical Clinic',
+      providerEmail: 'info@westlandsmedical.com',
+      patientId: 'patient_rony',
+      patientName: 'Rony',
+      patientEmail: 'rony@example.com',
+      dateTime: DateTime.now().add(const Duration(days: 1, hours: 14)),
+      communicationType: CommunicationType.inPerson,
+      status: AppointmentStatus.scheduled,
+      amount: 3500.00,
+      description: 'Annual health checkup',
+    ),
+    // Hospital appointment
+    Appointment(
+      id: '6',
+      providerId: 'hospital_knh_01',
+      providerName: 'Kenyatta National Hospital',
+      providerEmail: 'appointments@knh.or.ke',
+      patientId: 'patient_rony',
+      patientName: 'Rony',
+      patientEmail: 'rony@example.com',
+      dateTime: DateTime.now().subtract(const Duration(days: 7)),
+      communicationType: CommunicationType.inPerson,
+      status: AppointmentStatus.completed,
+      amount: 5000.00,
+      description: 'Cardiology specialist consultation',
+    ),
+    // Pharmacy service
+    Appointment(
+      id: '7',
+      providerId: 'pharmacy_goodlife_01',
+      providerName: 'Goodlife Pharmacy',
+      providerEmail: 'services@goodlifepharmacy.com',
+      patientId: 'patient_rony',
+      patientName: 'Rony',
+      patientEmail: 'rony@example.com',
+      dateTime: DateTime.now().subtract(const Duration(days: 2)),
+      communicationType: CommunicationType.chat,
+      status: AppointmentStatus.completed,
+      amount: 850.00,
+      description: 'Medication consultation and prescription review',
+    ),
+    // Dental clinic
+    Appointment(
+      id: '8',
+      providerId: 'dental_smile_01',
+      providerName: 'Smile Dental Clinic',
+      providerEmail: 'bookings@smileclinic.com',
+      patientId: 'patient_rony',
+      patientName: 'Rony',
+      patientEmail: 'rony@example.com',
+      dateTime: DateTime.now().add(const Duration(days: 5, hours: 9)),
+      communicationType: CommunicationType.inPerson,
+      status: AppointmentStatus.scheduled,
+      amount: 4200.00,
+      description: 'Dental cleaning and checkup',
+    ),
   ];
-
-  static List<Appointment> getAllAppointments() => _appointments;
 
   static List<Appointment> getAppointmentsByStatus(AppointmentStatus status) {
     return _appointments.where((apt) => apt.status == status).toList();
+  }
+
+  static List<Appointment> getAllAppointments() {
+    // Return all appointments sorted by date (newest first)
+    final allAppointments = List<Appointment>.from(_appointments);
+    allAppointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return allAppointments;
   }
 
   static List<Appointment> getUpcomingAppointments() {
@@ -138,7 +203,13 @@ class AppointmentService {
     if (index != -1) {
       final appointment = _appointments[index];
       final oldDateTime = appointment.dateTime;
-      _appointments[index] = appointment.copyWith(dateTime: newDateTime);
+      
+      // Update appointment with new date and ensure it's scheduled
+      _appointments[index] = appointment.copyWith(
+        dateTime: newDateTime,
+        status: AppointmentStatus.scheduled, // Ensure it's scheduled
+        endedAt: null, // Clear any previous end time
+      );
 
       // Automatically create a message for the appointment reschedule
       await MessageService.addMessage(

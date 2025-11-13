@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/message_service.dart';
 import '../models/message.dart';
+import '../utils/responsive_utils.dart';
 import 'chat_screen.dart';
 import 'notification_chat_screen.dart';
 
@@ -42,25 +43,35 @@ class _InboxScreenState extends State<InboxScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveUtils.getResponsivePadding(context),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Inbox',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                  Flexible(
+                    child: Text(
+                      'Inbox',
+                      style: TextStyle(
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(
+                          context,
+                          24,
+                        ),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.black),
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: Colors.black,
+                      size: ResponsiveUtils.isSmallScreen(context) ? 22 : 24,
+                    ),
                     onSelected: _handleMenuAction,
                     itemBuilder: (context) => [
                       const PopupMenuItem(
                         value: 'mark_all_read',
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.mark_email_read, color: Colors.blue),
                             SizedBox(width: 8),
@@ -71,6 +82,7 @@ class _InboxScreenState extends State<InboxScreen> {
                       const PopupMenuItem(
                         value: 'clear_all',
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.delete_sweep, color: Colors.red),
                             SizedBox(width: 8),
@@ -86,19 +98,37 @@ class _InboxScreenState extends State<InboxScreen> {
             Expanded(
               child: messages.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.inbox, size: 80, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No messages yet',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
+                      child: ResponsiveUtils.flexibleContainer(
+                        context: context,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inbox,
+                              size: ResponsiveUtils.isSmallScreen(context)
+                                  ? 60
+                                  : 80,
+                              color: Colors.grey[400],
                             ),
-                          ),
-                        ],
+                            SizedBox(
+                              height: ResponsiveUtils.getResponsiveSpacing(
+                                context,
+                                16,
+                              ),
+                            ),
+                            ResponsiveUtils.safeText(
+                              'No messages yet',
+                              style: TextStyle(
+                                fontSize: ResponsiveUtils.getResponsiveFontSize(
+                                  context,
+                                  16,
+                                ),
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -265,13 +295,13 @@ class _InboxScreenState extends State<InboxScreen> {
     }
   }
 
-  void _openMessage(Message message) {
+  void _openMessage(Message message) async {
+    // Mark message as read when opened
     if (!message.isRead) {
-      MessageService.markAsRead(message.id).then((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+      await MessageService.markAsRead(message.id);
+      if (mounted) {
+        setState(() {});
+      }
     }
 
     // Use the new message category to determine navigation

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:async';
+import 'dart:io';
 import '../models/message.dart';
 import '../services/chat_service.dart';
 import '../services/call_service.dart';
+import '../utils/responsive_utils.dart';
 import 'call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -20,6 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<ChatMessage> _chatMessages = [];
   late String _chatRoomId;
   StreamSubscription<List<ChatMessage>>? _chatSubscription;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -67,15 +73,19 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            ResponsiveUtils.safeText(
               widget.message.senderName,
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              ),
+              maxLines: 1,
             ),
             Text(
               'Online',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
                 color: Colors.grey[600],
                 fontWeight: FontWeight.normal,
               ),
@@ -87,11 +97,17 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.videocam),
+            icon: Icon(
+              Icons.videocam,
+              size: ResponsiveUtils.isSmallScreen(context) ? 22 : 24,
+            ),
             onPressed: () => _startVideoCall(),
           ),
           IconButton(
-            icon: const Icon(Icons.call),
+            icon: Icon(
+              Icons.call,
+              size: ResponsiveUtils.isSmallScreen(context) ? 22 : 24,
+            ),
             onPressed: () => _startVoiceCall(),
           ),
           PopupMenuButton<String>(
@@ -100,6 +116,7 @@ class _ChatScreenState extends State<ChatScreen> {
               const PopupMenuItem(
                 value: 'clear_chat',
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.delete_sweep, color: Colors.red),
                     SizedBox(width: 8),
@@ -115,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveUtils.getResponsivePadding(context),
               itemCount: _chatMessages.length,
               itemBuilder: (context, index) {
                 return _buildChatBubble(_chatMessages[index]);
@@ -134,10 +151,15 @@ class _ChatScreenState extends State<ChatScreen> {
           ? Alignment.centerRight
           : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: EdgeInsets.only(
+          bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+          vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+        ),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: ResponsiveUtils.getScreenWidth(context) * 0.8,
         ),
         decoration: BoxDecoration(
           color: message.isFromUser ? Colors.white : Colors.grey[100],
@@ -148,18 +170,172 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              message.text,
-              style: TextStyle(color: Colors.black, fontSize: 15),
-            ),
-            const SizedBox(height: 4),
+            // Display file attachment if present
+            if (message.attachmentUrl != null) ...[
+              _buildAttachmentPreview(message),
+              SizedBox(
+                height: ResponsiveUtils.getResponsiveSpacing(context, 8),
+              ),
+            ],
+            // Display text message
+            if (message.messageType == ChatMessageType.text ||
+                message.attachmentUrl == null)
+              Text(
+                message.text,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 15),
+                ),
+                softWrap: true,
+              ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
             Text(
               DateFormat('HH:mm').format(message.timestamp),
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAttachmentPreview(ChatMessage message) {
+    switch (message.messageType) {
+      case ChatMessageType.image:
+        return _buildImagePreview(message.attachmentUrl!);
+      case ChatMessageType.file:
+        return _buildFilePreview(message.text, message.attachmentUrl!);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildImagePreview(String imagePath) {
+    return GestureDetector(
+      onTap: () => _showFullScreenImage(imagePath),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 200, maxHeight: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: kIsWeb
+              ? Image.network(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 100,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(Icons.broken_image, size: 40),
+                      ),
+                    );
+                  },
+                )
+              : Image.file(
+                  File(imagePath),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 100,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(Icons.broken_image, size: 40),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilePreview(String fileName, String filePath) {
+    return GestureDetector(
+      onTap: () => _openFile(filePath),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red[200]!),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.picture_as_pdf, color: Colors.red[600], size: 24),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fileName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red[800],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'PDF Document',
+                    style: TextStyle(fontSize: 12, color: Colors.red[600]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.download, color: Colors.red[600], size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(String imagePath) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: kIsWeb
+                    ? Image.network(imagePath)
+                    : Image.file(File(imagePath)),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openFile(String filePath) {
+    // For now, show a message that the file can be opened
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening file: ${filePath.split('/').last}'),
+        backgroundColor: Colors.blue,
       ),
     );
   }
@@ -171,7 +347,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!canReply) {
       // Show read-only indicator for system notifications
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveUtils.getResponsivePadding(context),
         decoration: BoxDecoration(
           color: Colors.grey[50],
           border: Border(top: BorderSide(color: Colors.grey[300]!)),
@@ -179,14 +355,22 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'This is a system notification - no replies allowed',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
+            Icon(
+              Icons.info_outline,
+              color: Colors.grey[600],
+              size: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
+            ),
+            SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 8)),
+            Flexible(
+              child: ResponsiveUtils.safeText(
+                'This is a system notification - no replies allowed',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
               ),
             ),
           ],
@@ -195,7 +379,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: ResponsiveUtils.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey[300]!)),
@@ -203,7 +387,10 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.attach_file),
+            icon: Icon(
+              Icons.attach_file,
+              size: ResponsiveUtils.isSmallScreen(context) ? 22 : 24,
+            ),
             onPressed: () => _showAttachmentOptions(),
           ),
           Expanded(
@@ -211,21 +398,27 @@ class _ChatScreenState extends State<ChatScreen> {
               controller: _messageController,
               decoration: InputDecoration(
                 hintText: 'Type a message...',
+                hintStyle: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: Colors.grey[100],
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+                  vertical: ResponsiveUtils.getResponsiveSpacing(context, 8),
                 ),
+              ),
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 15),
               ),
               maxLines: null,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 8)),
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -235,7 +428,11 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             child: IconButton(
-              icon: const Icon(Icons.send, color: Colors.black),
+              icon: Icon(
+                Icons.send,
+                color: Colors.black,
+                size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+              ),
               onPressed: _sendMessage,
             ),
           ),
@@ -325,50 +522,183 @@ class _ChatScreenState extends State<ChatScreen> {
   void _showAttachmentOptions() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.photo),
-              title: const Text('Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Photo attachment feature coming soon'),
-                  ),
-                );
-              },
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.insert_drive_file),
-              title: const Text('Document'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Document attachment feature coming soon'),
-                  ),
-                );
-              },
+            const SizedBox(height: 20),
+            const Text(
+              'Send Attachment',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            ListTile(
-              leading: const Icon(Icons.location_on),
-              title: const Text('Location'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Location sharing feature coming soon'),
-                  ),
-                );
-              },
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildAttachmentOption(
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () => _pickImageFromCamera(),
+                ),
+                _buildAttachmentOption(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () => _pickImageFromGallery(),
+                ),
+                _buildAttachmentOption(
+                  icon: Icons.picture_as_pdf,
+                  label: 'PDF',
+                  onTap: () => _pickPdfDocument(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachmentOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 28, color: Colors.grey[700]),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      Navigator.pop(context); // Close bottom sheet
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        await _sendFileMessage(image.path, image.name, ChatMessageType.image);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to capture image from camera');
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      Navigator.pop(context); // Close bottom sheet
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        await _sendFileMessage(image.path, image.name, ChatMessageType.image);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to pick image from gallery');
+    }
+  }
+
+  Future<void> _pickPdfDocument() async {
+    try {
+      Navigator.pop(context); // Close bottom sheet
+
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.path != null) {
+          await _sendFileMessage(file.path!, file.name, ChatMessageType.file);
+        }
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to pick PDF document');
+    }
+  }
+
+  Future<void> _sendFileMessage(
+    String filePath,
+    String fileName,
+    ChatMessageType messageType,
+  ) async {
+    try {
+      // Create a message with file attachment
+      final fileMessage = ChatMessage(
+        text: fileName, // Use filename as message text
+        isFromUser: true,
+        timestamp: DateTime.now(),
+        senderName: 'You',
+        messageType: messageType,
+        attachmentUrl: filePath,
+      );
+
+      await ChatService.addMessage(_chatRoomId, fileMessage);
+
+      _showSuccessSnackBar(
+        '${messageType == ChatMessageType.image ? 'Image' : 'Document'} sent successfully',
+      );
+    } catch (e) {
+      _showErrorSnackBar('Failed to send file');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 

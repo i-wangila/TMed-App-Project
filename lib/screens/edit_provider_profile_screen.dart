@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../models/healthcare_provider.dart';
 import '../services/healthcare_provider_service.dart';
 
@@ -31,6 +33,10 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
   bool _isAvailable = true;
   bool _isLoading = false;
 
+  // Profile Image
+  String? _profileImagePath;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +65,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
     _languages = List.from(widget.provider.languages);
     _workingDays = List.from(widget.provider.workingDays);
     _isAvailable = widget.provider.isAvailable;
+    _profileImagePath = widget.provider.profileImageUrl;
   }
 
   @override
@@ -96,6 +103,8 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildBasicInfoSection(),
+              const SizedBox(height: 24),
+              _buildProfileImageSection(),
               const SizedBox(height: 24),
               _buildProfessionalInfoSection(),
               const SizedBox(height: 24),
@@ -427,6 +436,148 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
     );
   }
 
+  Widget _buildProfileImageSection() {
+    return _buildSection('Profile Image', [
+      Center(
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: _pickProfileImage,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!, width: 2),
+                ),
+                child: _buildCurrentImage(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _pickProfileImage,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Change Image'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.blue),
+                    foregroundColor: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                OutlinedButton.icon(
+                  onPressed: _removeProfileImage,
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Remove'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildCurrentImage() {
+    if (_profileImagePath != null && _profileImagePath!.startsWith('/')) {
+      // Local file path
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.file(
+          File(_profileImagePath!),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        ),
+      );
+    } else if (_profileImagePath != null &&
+        _profileImagePath != 'https://via.placeholder.com/200') {
+      // Network image
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.network(
+          _profileImagePath!,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        ),
+      );
+    } else {
+      return _buildDefaultAvatar();
+    }
+  }
+
+  Widget _buildDefaultAvatar() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person_add_alt_1, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 8),
+          Text(
+            'Tap to upload',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickProfileImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _profileImagePath = image.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile image updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to pick image. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _removeProfileImage() {
+    setState(() {
+      _profileImagePath = 'https://via.placeholder.com/200';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profile image removed'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   void _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -474,6 +625,7 @@ class _EditProviderProfileScreenState extends State<EditProviderProfileScreen> {
         languages: _languages,
         workingDays: _workingDays,
         isAvailable: _isAvailable,
+        profileImageUrl: _profileImagePath,
       );
 
       final success = HealthcareProviderService.updateProvider(updatedProvider);

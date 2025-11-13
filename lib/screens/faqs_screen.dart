@@ -53,7 +53,7 @@ class FaqsScreen extends StatelessWidget {
           ),
           _buildFaqItem(
             'How do I contact customer support?',
-            'You can contact support through the "Contact Us" section in your profile, or email us at support@tmed.com, or call +254 700 123 456.',
+            'You can contact support through the "Contact Us" section in your profile, or email us at support@tmed.com, or call +254740109195.',
           ),
         ],
       ),

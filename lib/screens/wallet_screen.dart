@@ -1,4 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/wallet.dart';
+import '../services/wallet_service.dart';
+import '../utils/responsive_utils.dart';
+import 'topup_screen.dart';
+import 'withdraw_screen.dart';
+import 'bill_payment_screen.dart';
+import 'manage_cards_screen.dart';
+import 'manage_accounts_screen.dart';
+import 'transaction_history_screen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -8,6 +18,24 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
+  bool _isLoading = true;
+  bool _balanceVisible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeWallet();
+  }
+
+  Future<void> _initializeWallet() async {
+    await WalletService.initialize();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,140 +44,448 @@ class _WalletScreenState extends State<WalletScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildWalletBalance(),
-          const SizedBox(height: 24),
-          _buildTransactionHistory(),
-          const SizedBox(height: 24),
-          _buildComingSoonMessage(),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _balanceVisible ? Icons.visibility : Icons.visibility_off,
+            ),
+            onPressed: () {
+              setState(() {
+                _balanceVisible = !_balanceVisible;
+              });
+            },
+          ),
+          PopupMenuButton<String>(
+            onSelected: _handleMenuAction,
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'cards',
+                child: Row(
+                  children: [
+                    Icon(Icons.credit_card),
+                    SizedBox(width: 8),
+                    Text('Manage Cards'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'accounts',
+                child: Row(
+                  children: [
+                    Icon(Icons.account_balance),
+                    SizedBox(width: 8),
+                    Text('Bank Accounts'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'history',
+                child: Row(
+                  children: [
+                    Icon(Icons.history),
+                    SizedBox(width: 8),
+                    Text('Full History'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _refreshWallet,
+              child: ListView(
+                padding: ResponsiveUtils.getResponsivePadding(context),
+                children: [
+                  _buildWalletBalance(),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 24),
+                  ),
+                  _buildQuickActions(),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 24),
+                  ),
+                  _buildTransactionHistory(),
+                ],
+              ),
+            ),
     );
   }
 
   Widget _buildWalletBalance() {
+    final wallet = WalletService.currentWallet;
+    if (wallet == null) return const SizedBox.shrink();
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: ResponsiveUtils.getResponsivePadding(context),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E86AB), Color(0xFF4A90A4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.grey.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Available Balance',
-            style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Available Balance',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                ),
+              ),
+              Icon(
+                Icons.account_balance_wallet,
+                color: Colors.white70,
+                size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'KES 2,500.00',
+          SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 8)),
+          Text(
+            _balanceVisible
+                ? WalletService.formatCurrency(wallet.balance)
+                : 'KES ****.**',
             style: TextStyle(
-              color: Colors.black,
-              fontSize: 36,
+              color: Colors.white,
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
               fontWeight: FontWeight.bold,
             ),
           ),
+          SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+          Text(
+            'Last updated: ${DateFormat('MMM dd, HH:mm').format(wallet.lastUpdated)}',
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 18),
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+        ResponsiveUtils.isSmallScreen(context)
+            ? Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionCard(
+                          'Top Up',
+                          Icons.add,
+                          Colors.green,
+                          () => _showTopUpDialog(),
+                        ),
+                      ),
+                      SizedBox(
+                        width: ResponsiveUtils.getResponsiveSpacing(
+                          context,
+                          12,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildActionCard(
+                          'Withdraw',
+                          Icons.remove,
+                          Colors.orange,
+                          () => _showWithdrawDialog(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionCard(
+                          'Pay Bills',
+                          Icons.receipt,
+                          Colors.purple,
+                          () => _showBillPaymentDialog(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: _buildActionCard(
+                      'Top Up',
+                      Icons.add,
+                      Colors.green,
+                      () => _showTopUpDialog(),
+                    ),
+                  ),
+                  SizedBox(
+                    width: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                  ),
+                  Expanded(
+                    child: _buildActionCard(
+                      'Withdraw',
+                      Icons.remove,
+                      Colors.orange,
+                      () => _showWithdrawDialog(),
+                    ),
+                  ),
+                  SizedBox(
+                    width: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                  ),
+                  Expanded(
+                    child: _buildActionCard(
+                      'Pay Bills',
+                      Icons.receipt,
+                      Colors.purple,
+                      () => _showBillPaymentDialog(),
+                    ),
+                  ),
+                ],
+              ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: ResponsiveUtils.getResponsivePadding(context),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(
+                ResponsiveUtils.getResponsiveSpacing(context, 12),
+              ),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+              ),
+            ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 8)),
+            ResponsiveUtils.safeText(
+              title,
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTransactionHistory() {
+    final transactions = WalletService.allTransactions.take(5).toList();
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveUtils.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Recent Transactions',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Transactions',
+                style: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 18),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              if (transactions.length >= 5)
+                TextButton(
+                  onPressed: () => _showFullHistory(),
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        14,
+                      ),
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+          if (transactions.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.receipt_long, size: 48, color: Colors.grey[400]),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 8),
+                  ),
+                  Text(
+                    'No transactions yet',
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        16,
+                      ),
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...transactions.map(
+              (transaction) => _buildTransactionItem(transaction),
             ),
-          ),
-          const SizedBox(height: 16),
-          _buildTransactionItem(
-            'Consultation Payment',
-            'Dr. Smith - Video Call',
-            '-KES 1,500.00',
-            DateTime.now().subtract(const Duration(days: 1)),
-            Colors.red,
-          ),
-          _buildTransactionItem(
-            'Wallet Top-up',
-            'M-Pesa Payment',
-            '+KES 5,000.00',
-            DateTime.now().subtract(const Duration(days: 3)),
-            Colors.green,
-          ),
-          _buildTransactionItem(
-            'Prescription Payment',
-            'Goodlife Pharmacy',
-            '-KES 850.00',
-            DateTime.now().subtract(const Duration(days: 5)),
-            Colors.red,
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildTransactionItem(
-    String title,
-    String subtitle,
-    String amount,
-    DateTime date,
-    Color amountColor,
-  ) {
+  Widget _buildTransactionItem(WalletTransaction transaction) {
+    final isCredit =
+        transaction.type == TransactionType.topup ||
+        transaction.type == TransactionType.refund;
+    final amountColor = isCredit ? Colors.green : Colors.red;
+    final amountPrefix = isCredit ? '+' : '-';
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(
+        bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
+      ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(
+              ResponsiveUtils.getResponsiveSpacing(context, 8),
+            ),
             decoration: BoxDecoration(
               color: amountColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              amountColor == Colors.green ? Icons.add : Icons.remove,
-              color: amountColor,
-              size: 16,
+            child: Text(
+              WalletService.getTransactionIcon(transaction.type),
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 12)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
+                ResponsiveUtils.safeText(
+                  transaction.description,
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      14,
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                if (transaction.reference != null)
+                  ResponsiveUtils.safeText(
+                    transaction.reference!,
+                    style: TextStyle(
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        12,
+                      ),
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                  ),
+                Row(
+                  children: [
+                    Text(
+                      WalletService.getPaymentMethodIcon(
+                        transaction.paymentMethod,
+                      ),
+                      style: TextStyle(
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(
+                          context,
+                          12,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: ResponsiveUtils.getResponsiveSpacing(context, 4),
+                    ),
+                    Text(
+                      transaction.paymentMethod.name.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(
+                          context,
+                          10,
+                        ),
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -158,16 +494,36 @@ class _WalletScreenState extends State<WalletScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                amount,
+                '$amountPrefix${WalletService.formatCurrency(transaction.amount)}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
                   fontWeight: FontWeight.bold,
                   color: amountColor,
                 ),
               ),
               Text(
-                '${date.day}/${date.month}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                DateFormat('MMM dd').format(transaction.createdAt),
+                style: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
+                  color: Colors.grey[600],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(
+                    transaction.status,
+                  ).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  transaction.status.name.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 8),
+                    color: _getStatusColor(transaction.status),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -176,34 +532,97 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  Widget _buildComingSoonMessage() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!, width: 1),
+  Color _getStatusColor(TransactionStatus status) {
+    switch (status) {
+      case TransactionStatus.completed:
+        return Colors.green;
+      case TransactionStatus.pending:
+        return Colors.orange;
+      case TransactionStatus.failed:
+        return Colors.red;
+      case TransactionStatus.cancelled:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _refreshWallet() async {
+    await WalletService.initialize();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'cards':
+        _showManageCardsDialog();
+        break;
+      case 'accounts':
+        _showManageAccountsDialog();
+        break;
+      case 'history':
+        _showFullHistory();
+        break;
+    }
+  }
+
+  void _showTopUpDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TopUpScreen(
+          onTransactionComplete: () {
+            _refreshWallet();
+          },
+        ),
       ),
-      child: Column(
-        children: [
-          Icon(Icons.construction, size: 48, color: Colors.blue[600]),
-          const SizedBox(height: 12),
-          Text(
-            'More Features Coming Soon',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue[800],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We\'re working on adding more wallet features like mobile money integration, bill payments, and more.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.blue[700]),
-          ),
-        ],
+    );
+  }
+
+  void _showWithdrawDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WithdrawScreen(
+          onTransactionComplete: () {
+            _refreshWallet();
+          },
+        ),
       ),
+    );
+  }
+
+  void _showBillPaymentDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BillPaymentScreen(
+          onTransactionComplete: () {
+            _refreshWallet();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showManageCardsDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ManageCardsScreen()),
+    );
+  }
+
+  void _showManageAccountsDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ManageAccountsScreen()),
+    );
+  }
+
+  void _showFullHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => TransactionHistoryScreen()),
     );
   }
 }

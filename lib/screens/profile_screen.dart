@@ -4,11 +4,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'become_provider_screen.dart';
 import 'profile_edit_screen.dart';
+import 'edit_provider_profile_screen.dart';
+import 'edit_facility_profile_screen.dart';
 import 'wallet_screen.dart';
 import 'medical_records_screen.dart';
 import 'prescriptions_screen.dart';
 import 'settings_screen.dart';
+import 'about_screen.dart';
+import 'document_management_screen.dart';
+import '../utils/responsive_utils.dart';
 import '../services/user_service.dart';
+import '../services/healthcare_provider_service.dart';
+import '../services/healthcare_facility_service.dart';
+import '../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -22,6 +30,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _hasCustomImage = false;
   File? _profileImageFile;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  void _loadProfileImage() {
+    final user = UserService.currentUser;
+    if (user?.profilePicturePath != null &&
+        user!.profilePicturePath!.isNotEmpty) {
+      setState(() {
+        if (user.profilePicturePath!.startsWith('/')) {
+          // Local file path
+          _profileImageFile = File(user.profilePicturePath!);
+          _hasCustomImage = true;
+        } else {
+          // Network URL
+          _profileImageUrl = user.profilePicturePath;
+          _hasCustomImage = true;
+        }
+      });
+    }
+  }
+
+  Widget _buildUserTypeAndBio() {
+    final user = UserService.currentUser;
+
+    // Check if user is a healthcare provider
+    final provider = HealthcareProviderService.getProviderByEmail(
+      user?.email ?? '',
+    );
+
+    if (provider != null) {
+      return Column(
+        children: [
+          Text(
+            provider.specialization,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.blue[600],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (provider.bio.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              provider.bio,
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.star, color: Colors.amber, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                '${provider.rating}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '(${provider.reviewCount} reviews)',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: provider.isAvailable
+                      ? Colors.green[100]
+                      : Colors.red[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  provider.isAvailable ? 'Available' : 'Unavailable',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: provider.isAvailable
+                        ? Colors.green[700]
+                        : Colors.red[700],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      return Text(
+        'Patient',
+        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +154,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const [], // Explicitly remove any actions including search icon
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: ResponsiveUtils.getResponsivePadding(context),
         child: Column(
           children: [
             _buildProfileCard(context),
-            const SizedBox(height: 20),
-
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
             _buildBecomeProviderCard(context),
-            const SizedBox(height: 20),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
             _buildMenuSection(context),
           ],
         ),
@@ -58,112 +169,141 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey[200],
-                backgroundImage: _getProfileImage(),
-                onBackgroundImageError: (exception, stackTrace) {},
-                child: !_hasCustomImage
-                    ? Text(
-                        _getInitials(),
-                        style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: _showImagePickerDialog,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
+    return ResponsiveUtils.flexibleContainer(
+      context: context,
+      child: Container(
+        padding: ResponsiveUtils.getResponsivePadding(context),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.1),
+              spreadRadius: 1,
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                Builder(
+                  builder: (context) {
+                    final profileImage = _getProfileImage();
+                    return CircleAvatar(
+                      radius: ResponsiveUtils.isSmallScreen(context) ? 40 : 50,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: profileImage,
+                      onBackgroundImageError: profileImage != null
+                          ? (exception, stackTrace) {}
+                          : null,
+                      child: !_hasCustomImage
+                          ? Text(
+                              _getInitials(),
+                              style: TextStyle(
+                                fontSize: ResponsiveUtils.getResponsiveFontSize(
+                                  context,
+                                  40,
+                                ),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            )
+                          : null,
+                    );
+                  },
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _showImagePickerDialog,
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(
+                        ResponsiveUtils.getResponsiveSpacing(context, 4),
+                      ),
                       decoration: const BoxDecoration(
-                        color: Colors.black,
+                        color: Colors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 16,
+                      child: Container(
+                        padding: EdgeInsets.all(
+                          ResponsiveUtils.getResponsiveSpacing(context, 8),
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: ResponsiveUtils.isSmallScreen(context)
+                              ? 14
+                              : 16,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            UserService.currentUser?.name ?? 'Isaac',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Patient',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileEditScreen(),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+            ResponsiveUtils.safeText(
+              UserService.currentUser?.name ?? 'Isaac',
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 28),
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+            _buildUserTypeAndBio(),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileEditScreen(),
+                    ),
+                  );
+                  // Refresh profile data when returning from edit screen
+                  if (result == true && mounted) {
+                    setState(() {
+                      _loadProfileImage();
+                    });
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.black),
+                  padding: EdgeInsets.symmetric(
+                    vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
                   ),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.black),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                child: Text(
+                  'Edit Profile',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      16,
+                    ),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -175,55 +315,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      isScrollControlled: true,
+      builder: (context) {
+        final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottomPadding),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Choose Profile Picture',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildImageSourceOptions(),
+                    if (_hasCustomImage) ...[
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: _removeImage,
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        label: const Text(
+                          'Remove Picture',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Choose Profile Picture',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            _buildImageSourceOptions(),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 10),
-            const Text(
-              'Or choose from presets:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 15),
-            _buildAvatarOptions(),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildImageSourceOptions() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildSourceOption(
-          icon: Icons.camera_alt,
-          label: 'Camera',
-          onTap: () => _pickImage(ImageSource.camera),
+        Expanded(
+          child: _buildSourceOption(
+            icon: Icons.camera_alt,
+            label: 'Camera',
+            onTap: () => _pickImage(ImageSource.camera),
+          ),
         ),
-        _buildSourceOption(
-          icon: Icons.photo_library,
-          label: 'Gallery',
-          onTap: () => _pickImage(ImageSource.gallery),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildSourceOption(
+            icon: Icons.photo_library,
+            label: 'Gallery',
+            onTap: () => _pickImage(ImageSource.gallery),
+          ),
         ),
       ],
     );
@@ -237,13 +398,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 32, color: Colors.black),
             const SizedBox(height: 8),
@@ -258,58 +421,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAvatarOptions() {
-    final avatarOptions = [
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
-    ];
-
-    return Column(
-      children: [
-        // Avatar options
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: avatarOptions.map((imageUrl) {
-            final isSelected =
-                _profileImageUrl == imageUrl && _profileImageFile == null;
-            return GestureDetector(
-              onTap: () => _selectAvatar(imageUrl),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected ? Colors.blue : Colors.transparent,
-                    width: 3,
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 25,
-                  backgroundImage: NetworkImage(imageUrl),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 20),
-        // Remove option
-        if (_hasCustomImage)
-          TextButton.icon(
-            onPressed: _removeImage,
-            icon: const Icon(Icons.delete, color: Colors.red),
-            label: const Text(
-              'Remove Picture',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-      ],
     );
   }
 
@@ -365,17 +476,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
-  void _selectAvatar(String imageUrl) {
-    final navigator = Navigator.of(context);
-    navigator.pop(); // Close bottom sheet
-    setState(() {
-      _profileImageUrl = imageUrl;
-      _profileImageFile = null; // Clear file image
-      _hasCustomImage = true;
-    });
-    _saveProfileImage();
-  }
-
   void _removeImage() {
     final navigator = Navigator.of(context);
     navigator.pop(); // Close bottom sheet
@@ -388,15 +488,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveProfileImage() async {
-    // Simulate saving to server
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      String? imagePath;
 
-    if (mounted) {
-      _showSnackBar(
-        _hasCustomImage
-            ? 'Profile picture updated successfully'
-            : 'Profile picture removed',
-      );
+      if (_profileImageFile != null) {
+        imagePath = _profileImageFile!.path;
+      } else if (_profileImageUrl != null) {
+        imagePath = _profileImageUrl;
+      }
+
+      // Update the user service with the new profile picture
+      await UserService.updateProfilePicture(imagePath ?? '');
+
+      if (mounted) {
+        _showSnackBar(
+          _hasCustomImage
+              ? 'Profile picture updated successfully'
+              : 'Profile picture removed',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Failed to update profile picture');
+      }
     }
   }
 
@@ -523,6 +637,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           _buildDivider(),
           _buildMenuItem(
+            icon: Icons.description,
+            title: 'My Documents',
+            subtitle: 'Manage uploaded documents and certificates',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DocumentManagementScreen(),
+                ),
+              );
+            },
+          ),
+          _buildDivider(),
+          // Provider-only menu item
+          if (_isHealthcareProvider()) ...[
+            _buildMenuItem(
+              icon: Icons.edit_note,
+              title: 'Edit Provider Profile',
+              subtitle: 'Update your professional information',
+              onTap: () => _editProviderProfile(),
+            ),
+            _buildDivider(),
+          ],
+          _buildMenuItem(
             icon: Icons.account_balance_wallet,
             title: 'Wallet',
             subtitle: 'Manage your payments and transactions',
@@ -559,6 +697,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           _buildDivider(),
           _buildMenuItem(
+            icon: Icons.info_outline,
+            title: 'About',
+            subtitle: 'Learn more about TMed and our mission',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutScreen()),
+              );
+            },
+          ),
+          _buildDivider(),
+          _buildMenuItem(
             icon: Icons.settings,
             title: 'Settings',
             subtitle: 'App preferences and account settings',
@@ -569,6 +719,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
           ),
+          _buildDivider(),
+          _buildAppInfoCard(),
         ],
       ),
     );
@@ -615,6 +767,405 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Divider(color: Colors.grey[200], thickness: 1, height: 1),
+    );
+  }
+
+  Widget _buildAppInfoCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.blue[50]!, Colors.indigo[50]!],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue[100]!, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with app icon and name
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.medical_services,
+                  color: Colors.blue[700],
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TMed',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Text(
+                      'Healthcare at Your Fingertips',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // App Information
+          _buildInfoRow(
+            icon: Icons.info_outline,
+            label: 'Version',
+            value: '1.0.0',
+          ),
+          const SizedBox(height: 12),
+          _buildInfoRow(
+            icon: Icons.person_outline,
+            label: 'Developer',
+            value: 'Isaac Wangila',
+          ),
+          const SizedBox(height: 12),
+          _buildInfoRow(
+            icon: Icons.build_outlined,
+            label: 'Build',
+            value: 'Release 2025.1',
+          ),
+          const SizedBox(height: 12),
+          _buildInfoRow(
+            icon: Icons.flutter_dash,
+            label: 'Platform',
+            value: 'Flutter 3.24.0',
+          ),
+
+          const SizedBox(height: 20),
+
+          // Divider
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Colors.blue[200]!,
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Copyright and Legal Information
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.copyright, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 6),
+                  Text(
+                    '© 2025 TMed. All rights reserved.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This application and its content are protected by copyright law. Unauthorized reproduction, distribution, or modification is strictly prohibited.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 14,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Licensed software. All trademarks are property of their respective owners.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AboutScreen(),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.info, size: 16, color: Colors.blue[700]),
+                  label: Text(
+                    'More Info',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.blue[300]!),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    _showLicenseDialog();
+                  },
+                  icon: Icon(Icons.article, size: 16, color: Colors.grey[700]),
+                  label: Text(
+                    'Licenses',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey[300]!),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Colors.blue[600]),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showLicenseDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Open Source Licenses',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'This application uses the following open source packages:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              _buildLicenseItem('Flutter SDK', 'BSD-3-Clause License'),
+              _buildLicenseItem('Material Design', 'Apache License 2.0'),
+              _buildLicenseItem('Intl Package', 'BSD-3-Clause License'),
+              _buildLicenseItem('Image Picker', 'Apache License 2.0'),
+              _buildLicenseItem('Path Provider', 'BSD-3-Clause License'),
+              _buildLicenseItem('URL Launcher', 'BSD-3-Clause License'),
+              const SizedBox(height: 12),
+              Text(
+                'Full license texts are available in the application source code.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLicenseItem(String package, String license) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            width: 4,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.blue[600],
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  package,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  license,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isHealthcareProvider() {
+    final user = UserService.currentUser;
+    return user?.userType == UserType.provider;
+  }
+
+  void _editProviderProfile() async {
+    final user = UserService.currentUser;
+    if (user == null || user.userType != UserType.provider) {
+      _showSnackBar('Only healthcare providers can edit provider profiles');
+      return;
+    }
+
+    // Try to find individual provider profile first
+    final provider = HealthcareProviderService.getProviderByEmail(user.email);
+    if (provider != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditProviderProfileScreen(provider: provider),
+        ),
+      );
+
+      if (result != null) {
+        _showSnackBar('Provider profile updated successfully');
+      }
+      return;
+    }
+
+    // Try to find facility profile
+    final facility = HealthcareFacilityService.getFacilityByEmail(user.email);
+    if (facility != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditFacilityProfileScreen(facility: facility),
+        ),
+      );
+
+      if (result != null) {
+        _showSnackBar('Facility profile updated successfully');
+      }
+      return;
+    }
+
+    // No provider or facility profile found
+    _showSnackBar(
+      'Provider profile not found. Please complete your provider registration first.',
     );
   }
 }

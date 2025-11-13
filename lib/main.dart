@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/user_service.dart';
 import 'services/message_service.dart';
+import 'services/wallet_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await UserService.initialize();
   await MessageService.loadMessages();
+  await WalletService.initialize();
   runApp(const TMedApp());
 }
 

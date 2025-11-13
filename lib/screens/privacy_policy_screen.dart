@@ -80,7 +80,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text('Email: privacy@tmed.com'),
-                  const Text('Phone: +254 700 123 456'),
+                  const Text('Phone: +254740109195'),
                 ],
               ),
             ),

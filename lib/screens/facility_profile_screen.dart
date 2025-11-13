@@ -543,7 +543,12 @@ class _FacilityProfileScreenState extends State<FacilityProfileScreen> {
                   children: [
                     Icon(Icons.phone, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 8),
-                    Text(person['phone']),
+                    Expanded(
+                      child: Text(
+                        person['phone'],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -551,7 +556,12 @@ class _FacilityProfileScreenState extends State<FacilityProfileScreen> {
                   children: [
                     Icon(Icons.email, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 8),
-                    Text(person['email']),
+                    Expanded(
+                      child: Text(
+                        person['email'],
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               ],

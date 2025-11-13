@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import '../services/user_service.dart';
+import '../utils/responsive_utils.dart';
 
 class AuthScreen extends StatefulWidget {
   final bool isSignIn;
@@ -16,7 +17,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -26,29 +28,43 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _isSignIn = widget.isSignIn;
+
+    // Add listener to password field for real-time validation feedback
+    _passwordController.addListener(() {
+      if (!_isSignIn) {
+        setState(() {
+          // This will trigger a rebuild to update password requirements
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final isSmallScreen = ResponsiveUtils.isSmallScreen(context);
+    
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFE8F4F0,
-      ), // Light mint/sage green background
+      backgroundColor: const Color(0xFFE8F4F0),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFE8F4F0), // Match the background
+        backgroundColor: const Color(0xFFE8F4F0),
         elevation: 0,
         automaticallyImplyLeading: false,
+        toolbarHeight: isSmallScreen ? 50 : 56,
         title: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              icon: Icon(
+                Icons.arrow_back, 
+                color: Colors.black,
+                size: isSmallScreen ? 20 : 24,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             const Spacer(),
             Text(
               'TMed',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
@@ -58,214 +74,236 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-
-              // Title with animation
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: Text(
-                  _isSignIn ? 'HELLO SIGN IN' : 'CREATE YOUR\nACCOUNT',
-                  key: ValueKey(_isSignIn),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveUtils.getResponsiveSpacing(context, 20),
+                vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
               ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
 
-              const SizedBox(height: 40),
-
-              // Form Container
-              Container(
-                width: double.infinity,
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height * 0.6,
-                ),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.black, width: 2),
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Name field (only for sign up)
-                      if (!_isSignIn) ...[
-                        _buildTextField(
-                          controller: _nameController,
-                          hintText: 'Full Name',
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-
-                      // Email field
-                      _buildTextField(
-                        controller: _emailController,
-                        hintText: _isSignIn ? 'Email' : 'Phone or Email',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
+                  // Title with animation
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Text(
+                      _isSignIn ? 'HELLO SIGN IN' : 'CREATE YOUR\nACCOUNT',
+                      key: ValueKey(_isSignIn),
+                      style: TextStyle(
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 22),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
 
-                      const SizedBox(height: 20),
+                  SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 12)),
 
-                      // Password field
-                      _buildTextField(
-                        controller: _passwordController,
-                        hintText: 'Password',
-                        icon: Icons.lock_outline,
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.grey,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
+                  // Form Container
+                  Align(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveUtils.isSmallScreen(context) ? double.infinity : 380,
                       ),
-
-                      // Confirm Password field (only for sign up)
-                      if (!_isSignIn) ...[
-                        const SizedBox(height: 20),
-                        _buildTextField(
-                          controller: _confirmPasswordController,
-                          hintText: 'Confirm Password',
-                          icon: Icons.lock_outline,
-                          obscureText: _obscureConfirmPassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                    !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveUtils.getResponsiveSpacing(context, 14),
+                          vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
                         ),
-                      ],
-
-                      // Forgot password (only for sign in)
-                      if (_isSignIn) ...[
-                        const SizedBox(height: 20),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              // Handle forgot password
-                            },
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.black, width: 1.5),
                         ),
-                      ],
-
-                      const SizedBox(height: 40),
-
-                      // Main Action Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleAuth,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              side: const BorderSide(
-                                color: Colors.black,
-                                width: 1,
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (!_isSignIn) ...[
+                                _buildTextField(
+                                  controller: _firstNameController,
+                                  hintText: 'First Name',
+                                  icon: Icons.person_outline,
+                                ),
+                                SizedBox(
+                                  height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                ),
+                                _buildTextField(
+                                  controller: _lastNameController,
+                                  hintText: 'Last Name',
+                                  icon: Icons.person_outline,
+                                ),
+                                SizedBox(
+                                  height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                ),
+                              ],
+                              _buildTextField(
+                                controller: _emailController,
+                                hintText: _isSignIn ? 'Email' : 'Phone or Email',
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
                               ),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.black,
-                                    strokeWidth: 2,
+                              SizedBox(
+                                height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                              ),
+                              _buildTextField(
+                                controller: _passwordController,
+                                hintText: 'Password',
+                                icon: Icons.lock_outline,
+                                obscureText: _obscurePassword,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    color: Colors.grey,
+                                    size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
                                   ),
-                                )
-                              : Text(
-                                  _isSignIn ? 'SIGN IN' : 'SIGN UP',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                customValidator: _isSignIn ? null : _validatePassword,
+                              ),
+                              if (!_isSignIn) ...[
+                                SizedBox(
+                                  height: ResponsiveUtils.getResponsiveSpacing(context, 8),
+                                ),
+                                _buildPasswordRequirements(),
+                              ],
+                              if (!_isSignIn) ...[
+                                SizedBox(
+                                  height: ResponsiveUtils.getResponsiveSpacing(context, 16),
+                                ),
+                                _buildTextField(
+                                  controller: _confirmPasswordController,
+                                  hintText: 'Confirm Password',
+                                  icon: Icons.lock_outline,
+                                  obscureText: _obscureConfirmPassword,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                      color: Colors.grey,
+                                      size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                                      });
+                                    },
+                                  ),
+                                  customValidator: _validateConfirmPassword,
+                                ),
+                              ],
+                              if (_isSignIn) ...[
+                                SizedBox(
+                                  height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      // Handle forgot password
+                                    },
+                                    child: Text(
+                                      'Forgot password?',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              ],
+                              SizedBox(
+                                height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _handleAuth,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      side: const BorderSide(
+                                        color: Colors.black,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: _isLoading
+                                      ? SizedBox(
+                                          height: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
+                                          width: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
+                                          child: const CircularProgressIndicator(
+                                            color: Colors.black,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(
+                                          _isSignIn ? 'SIGN IN' : 'SIGN UP',
+                                          style: TextStyle(
+                                            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              SizedBox(
+                                height: ResponsiveUtils.getResponsiveSpacing(context, 10),
+                              ),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  Text(
+                                    _isSignIn ? "Don't have an account? " : "Have an account? ",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isSignIn = !_isSignIn;
+                                        _clearForm();
+                                      });
+                                    },
+                                    child: Text(
+                                      _isSignIn ? 'SIGN UP' : 'SIGN IN',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                                        fontWeight: FontWeight.w600,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // Switch between sign in/up
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        children: [
-                          Text(
-                            _isSignIn
-                                ? "Don't have an account? "
-                                : "Have an account? ",
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 14,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isSignIn = !_isSignIn;
-                                _clearForm();
-                              });
-                            },
-                            child: Text(
-                              _isSignIn ? 'SIGN UP' : 'SIGN IN',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -278,15 +316,26 @@ class _AuthScreenState extends State<AuthScreen> {
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
+    String? Function(String?)? customValidator,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      style: TextStyle(
+        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+      ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: Colors.grey),
+        hintStyle: TextStyle(
+          color: Colors.grey,
+          fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+        ),
+        prefixIcon: Icon(
+          icon, 
+          color: Colors.grey,
+          size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+        ),
         suffixIcon: suffixIcon,
         border: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.grey),
@@ -297,21 +346,133 @@ class _AuthScreenState extends State<AuthScreen> {
         focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.black, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        contentPadding: EdgeInsets.symmetric(
+          vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+        ),
+        isDense: ResponsiveUtils.isSmallScreen(context),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $hintText';
-        }
-        return null;
-      },
+      validator:
+          customValidator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter $hintText';
+            }
+            return null;
+          },
+    );
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+
+    // Check for at least one uppercase letter
+    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    // Check for at least one number
+    if (!RegExp(r'[0-9]').hasMatch(value)) {
+      return 'Password must contain at least one number';
+    }
+
+    // Check for at least one special character
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+      return 'Password must contain at least one special character';
+    }
+
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+
+    if (value != _passwordController.text) {
+      return 'Passwords do not match';
+    }
+
+    return null;
+  }
+
+  Widget _buildPasswordRequirements() {
+    final password = _passwordController.text;
+
+    return Container(
+      padding: EdgeInsets.all(ResponsiveUtils.getResponsiveSpacing(context, 10)),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Password must contain:',
+            style: TextStyle(
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 11),
+              fontWeight: FontWeight.w500,
+              color: Colors.grey,
+            ),
+          ),
+          SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+          _buildRequirementItem('At least 6 characters', password.length >= 6),
+          _buildRequirementItem(
+            'At least one uppercase letter',
+            RegExp(r'[A-Z]').hasMatch(password),
+          ),
+          _buildRequirementItem(
+            'At least one number',
+            RegExp(r'[0-9]').hasMatch(password),
+          ),
+          _buildRequirementItem(
+            'At least one special character',
+            RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequirementItem(String text, bool isMet) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: ResponsiveUtils.getResponsiveSpacing(context, 2),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: ResponsiveUtils.isSmallScreen(context) ? 14 : 16,
+            color: isMet ? Colors.green : Colors.grey,
+          ),
+          SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 6)),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 10),
+                color: isMet ? Colors.green : Colors.grey,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   void _clearForm() {
     _emailController.clear();
     _passwordController.clear();
-    _nameController.clear();
+    _firstNameController.clear();
+    _lastNameController.clear();
     _confirmPasswordController.clear();
   }
 
@@ -346,8 +507,10 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       } else {
         // Sign Up
+        final fullName =
+            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
         final result = await UserService.signUp(
-          name: _nameController.text.trim(),
+          name: fullName,
           email: _emailController.text.trim(),
           phone: _emailController.text
               .trim(), // Using email field for phone/email
@@ -406,7 +569,8 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }

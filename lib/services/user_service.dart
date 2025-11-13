@@ -138,8 +138,27 @@ class UserService {
     try {
       if (_currentUser == null) return false;
 
+      final oldEmail = _currentUser!.email;
+      final newEmail = updatedProfile.email.toLowerCase().trim();
+
+      // Check if email is being changed and if new email already exists
+      if (oldEmail != newEmail && _users.containsKey(newEmail)) {
+        if (kDebugMode) {
+          print('Email already exists: $newEmail');
+        }
+        return false;
+      }
+
       final updatedUser = updatedProfile.copyWith();
-      _users[_currentUser!.email] = updatedUser;
+      
+      // If email changed, remove old entry and add new one
+      if (oldEmail != newEmail) {
+        _users.remove(oldEmail);
+        _users[newEmail] = updatedUser;
+      } else {
+        _users[oldEmail] = updatedUser;
+      }
+      
       _currentUser = updatedUser;
 
       await _saveUsers();

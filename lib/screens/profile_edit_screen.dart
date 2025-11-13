@@ -21,8 +21,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   String _selectedGender = '';
   bool _isLoading = false;
-  String? _profileImagePath;
-
   @override
   void initState() {
     super.initState();
@@ -47,7 +45,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _dateOfBirthController = TextEditingController(text: user.dateOfBirth);
     _bloodTypeController = TextEditingController(text: user.bloodType);
     _selectedGender = user.gender;
-    _profileImagePath = user.profilePicturePath;
   }
 
   @override
@@ -84,16 +81,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildProfileImage(),
-            const SizedBox(height: 24),
             _buildTextField('Full Name', _nameController, Icons.person),
             const SizedBox(height: 16),
-            _buildTextField(
-              'Email',
-              _emailController,
-              Icons.email,
-              enabled: false,
-            ),
+            _buildTextField('Email', _emailController, Icons.email),
             const SizedBox(height: 16),
             _buildTextField('Phone', _phoneController, Icons.phone),
             const SizedBox(height: 16),
@@ -101,18 +91,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(height: 16),
             _buildGenderField(),
             const SizedBox(height: 16),
-            _buildTextField('Address', _addressController, Icons.location_on),
-            const SizedBox(height: 16),
             _buildTextField(
-              'Emergency Contact',
-              _emergencyContactController,
-              Icons.emergency,
+              'Address (Optional)',
+              _addressController,
+              Icons.location_on,
+              isOptional: true,
             ),
             const SizedBox(height: 16),
             _buildTextField(
-              'Blood Type',
+              'Emergency Contact (Optional)',
+              _emergencyContactController,
+              Icons.emergency,
+              isOptional: true,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              'Blood Type (Optional)',
               _bloodTypeController,
               Icons.bloodtype,
+              isOptional: true,
             ),
             const SizedBox(height: 32),
             _buildSaveButton(),
@@ -124,54 +121,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildProfileImage() {
-    return Center(
-      child: GestureDetector(
-        onTap: _pickProfileImage,
-        child: Stack(
-          children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.grey[200],
-              child: _profileImagePath != null
-                  ? Text(
-                      _getInitials(),
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.person, size: 60, color: Colors.grey),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildTextField(
     String label,
     TextEditingController controller,
     IconData icon, {
     bool enabled = true,
+    bool isOptional = false,
   }) {
     return TextFormField(
       controller: controller,
@@ -199,8 +154,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         fillColor: enabled ? null : Colors.grey[100],
       ),
       validator: (value) {
-        if (enabled && (value == null || value.isEmpty)) {
-          return 'Please enter $label';
+        if (!isOptional && enabled && (value == null || value.isEmpty)) {
+          return 'Please enter ${label.replaceAll(' (Optional)', '')}';
         }
         return null;
       },
@@ -307,23 +262,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Future<void> _pickProfileImage() async {
-    // Simulate image picking - in a real app, you would use image_picker
-    setState(() {
-      _profileImagePath =
-          'user_selected_image_${DateTime.now().millisecondsSinceEpoch}';
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile picture updated'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -335,18 +273,23 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final currentUser = UserService.currentUser!;
       final updatedProfile = currentUser.copyWith(
         name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         address: _addressController.text.trim(),
         emergencyContact: _emergencyContactController.text.trim(),
         dateOfBirth: _dateOfBirthController.text.trim(),
         gender: _selectedGender,
         bloodType: _bloodTypeController.text.trim(),
+        profilePicturePath: currentUser.profilePicturePath,
       );
 
       final success = await UserService.updateProfile(updatedProfile);
 
       if (success && mounted) {
-        Navigator.pop(context);
+        Navigator.pop(
+          context,
+          true,
+        ); // Return true to indicate successful update
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
@@ -356,7 +299,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to update profile'),
+            content: Text('Failed to update profile. Email may already exist.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -414,18 +357,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ],
       ),
     );
-  }
-
-  String _getInitials() {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return 'U';
-
-    final parts = name.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    } else {
-      return parts[0][0].toUpperCase();
-    }
   }
 
   @override

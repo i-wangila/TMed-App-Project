@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/provider_type.dart';
+import '../models/document.dart';
+import '../services/healthcare_provider_service.dart';
+import '../services/healthcare_facility_service.dart';
+import '../services/document_service.dart';
+import '../services/user_service.dart';
+import 'document_upload_screen.dart';
 
 class ProviderRegistrationScreen extends StatefulWidget {
   final ProviderType providerType;
@@ -39,7 +45,26 @@ class _ProviderRegistrationScreenState
   final List<String> _workingDays = [];
 
   // Documents
-  final List<String> _uploadedDocuments = [];
+  final List<Document> _uploadedDocuments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeDocumentService();
+  }
+
+  Future<void> _initializeDocumentService() async {
+    await DocumentService.initialize();
+    await _loadUploadedDocuments();
+  }
+
+  Future<void> _loadUploadedDocuments() async {
+    final documents = DocumentService.getAllDocuments();
+    setState(() {
+      _uploadedDocuments.clear();
+      _uploadedDocuments.addAll(documents);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +214,7 @@ class _ProviderRegistrationScreenState
             _buildTextField(
               controller: _phoneController,
               label: 'Phone Number',
-              hint: '+254 700 123 456',
+              hint: '+254740109195',
               icon: Icons.phone,
               keyboardType: TextInputType.phone,
               validator: (value) {
@@ -410,6 +435,12 @@ class _ProviderRegistrationScreenState
           const SizedBox(height: 20),
           _buildReviewSection('Documents', [
             'Uploaded: ${_uploadedDocuments.length}/${widget.providerType.requirements.length} documents',
+            'Approved: ${_uploadedDocuments.where((doc) => doc.status == DocumentStatus.approved).length} documents',
+            'Pending: ${_uploadedDocuments.where((doc) => doc.status == DocumentStatus.pending).length} documents',
+          ]),
+          const SizedBox(height: 20),
+          _buildReviewSection('Profile Image', [
+            'Using current profile picture',
           ]),
           const SizedBox(height: 32),
           Container(
@@ -615,7 +646,46 @@ class _ProviderRegistrationScreenState
   }
 
   Widget _buildDocumentUploadCard(String documentType) {
-    final isUploaded = _uploadedDocuments.contains(documentType);
+    // Find the document for this type
+    Document? document;
+    try {
+      document = _uploadedDocuments.firstWhere(
+        (doc) =>
+            doc.typeDisplayName.toLowerCase() == documentType.toLowerCase(),
+      );
+    } catch (e) {
+      document = null;
+    }
+
+    final isUploaded = document != null;
+    Color statusColor = Colors.grey[600]!;
+    String statusText = 'Tap to upload';
+    IconData statusIcon = Icons.upload_file;
+
+    if (isUploaded) {
+      switch (document.status) {
+        case DocumentStatus.approved:
+          statusColor = Colors.green[600]!;
+          statusText = 'Approved';
+          statusIcon = Icons.check_circle;
+          break;
+        case DocumentStatus.pending:
+          statusColor = Colors.orange[600]!;
+          statusText = 'Pending review';
+          statusIcon = Icons.pending;
+          break;
+        case DocumentStatus.rejected:
+          statusColor = Colors.red[600]!;
+          statusText = 'Rejected - needs update';
+          statusIcon = Icons.cancel;
+          break;
+        case DocumentStatus.expired:
+          statusColor = Colors.grey[600]!;
+          statusText = 'Expired - needs renewal';
+          statusIcon = Icons.schedule;
+          break;
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -624,16 +694,14 @@ class _ProviderRegistrationScreenState
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isUploaded ? Colors.green[300]! : Colors.grey[300]!,
+          color: isUploaded
+              ? statusColor.withValues(alpha: 0.3)
+              : Colors.grey[300]!,
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            isUploaded ? Icons.check_circle : Icons.upload_file,
-            color: isUploaded ? Colors.green[600] : Colors.grey[600],
-            size: 32,
-          ),
+          Icon(statusIcon, color: statusColor, size: 32),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -648,12 +716,22 @@ class _ProviderRegistrationScreenState
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isUploaded ? 'Uploaded successfully' : 'Tap to upload',
+                  statusText,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isUploaded ? Colors.green[600] : Colors.grey[600],
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                if (isUploaded && document.fileName.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    document.fileName,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
@@ -661,14 +739,12 @@ class _ProviderRegistrationScreenState
             onPressed: () => _uploadDocument(documentType),
             style: ElevatedButton.styleFrom(
               backgroundColor: isUploaded
-                  ? Colors.green[100]
+                  ? statusColor.withValues(alpha: 0.1)
                   : Colors.blue[100],
-              foregroundColor: isUploaded
-                  ? Colors.green[800]
-                  : Colors.blue[800],
+              foregroundColor: isUploaded ? statusColor : Colors.blue[800],
               elevation: 0,
             ),
-            child: Text(isUploaded ? 'Replace' : 'Upload'),
+            child: Text(isUploaded ? 'Update' : 'Upload'),
           ),
         ],
       ),
@@ -796,11 +872,17 @@ class _ProviderRegistrationScreenState
           }
           break;
         case 2:
-          isValid =
-              _uploadedDocuments.length ==
-              widget.providerType.requirements.length;
+          // Check if all required documents are uploaded and approved
+          final requiredDocs = widget.providerType.requirements.length;
+          final approvedDocs = _uploadedDocuments
+              .where((doc) => doc.status == DocumentStatus.approved)
+              .length;
+
+          isValid = _uploadedDocuments.length >= requiredDocs;
           if (!isValid) {
             _showSnackBar('Please upload all required documents');
+          } else if (approvedDocs < requiredDocs) {
+            _showSnackBar('Some documents are still pending approval');
           }
           break;
       }
@@ -831,14 +913,39 @@ class _ProviderRegistrationScreenState
     }
   }
 
-  void _uploadDocument(String documentType) {
-    // Simulate document upload
-    setState(() {
-      if (!_uploadedDocuments.contains(documentType)) {
-        _uploadedDocuments.add(documentType);
-      }
-    });
-    _showSnackBar('$documentType uploaded successfully');
+  void _uploadDocument(String documentType) async {
+    // Map document type string to DocumentType enum
+    DocumentType docType;
+    switch (documentType.toLowerCase()) {
+      case 'medical license':
+        docType = DocumentType.medicalLicense;
+        break;
+      case 'professional certification':
+        docType = DocumentType.professionalCertification;
+        break;
+      case 'valid id':
+        docType = DocumentType.validId;
+        break;
+      case 'insurance certificate':
+        docType = DocumentType.insurance;
+        break;
+      default:
+        docType = DocumentType.other;
+    }
+
+    // Navigate to document upload screen
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentUploadScreen(documentType: docType),
+      ),
+    );
+
+    if (result == true) {
+      // Reload uploaded documents
+      await _loadUploadedDocuments();
+      _showSnackBar('$documentType uploaded successfully');
+    }
   }
 
   void _submitApplication() async {
@@ -846,15 +953,81 @@ class _ProviderRegistrationScreenState
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Create provider/facility based on category
+      if (widget.providerType.category == ProviderCategory.individual) {
+        // Create individual healthcare provider
+        final newProvider =
+            HealthcareProviderService.createProviderFromRegistration(
+              name: _nameController.text,
+              email: _emailController.text,
+              phone: _phoneController.text,
+              address: _addressController.text,
+              specialization: _specializationController.text,
+              experienceYears: int.tryParse(_experienceController.text) ?? 0,
+              bio: _bioController.text,
+              consultationFee:
+                  double.tryParse(_consultationFeeController.text) ?? 0.0,
+              services: _selectedServices,
+              languages: _selectedLanguages,
+              workingDays: _workingDays,
+              providerType: widget.providerType.name,
+              profileImagePath:
+                  UserService.currentUser?.profilePicturePath ??
+                  'https://via.placeholder.com/200',
+            );
 
-    setState(() {
-      _isLoading = false;
-    });
+        // Add to provider service
+        final success = await HealthcareProviderService.addNewProvider(
+          newProvider,
+        );
+        if (!success) {
+          throw Exception(
+            'Failed to register provider - email may already exist',
+          );
+        }
+      } else {
+        // Create healthcare facility
+        final newFacility =
+            HealthcareFacilityService.createFacilityFromRegistration(
+              name: _nameController.text,
+              email: _emailController.text,
+              phone: _phoneController.text,
+              address: _addressController.text,
+              specialization: _specializationController.text,
+              bio: _bioController.text,
+              services: _selectedServices,
+              workingDays: _workingDays,
+              facilityTypeId: widget.providerType.id,
+              profileImagePath:
+                  UserService.currentUser?.profilePicturePath ??
+                  'https://via.placeholder.com/200',
+            );
 
-    if (mounted) {
-      _showSuccessDialog();
+        // Add to facility service
+        final success = await HealthcareFacilityService.addNewFacility(
+          newFacility,
+        );
+        if (!success) {
+          throw Exception(
+            'Failed to register facility - email may already exist',
+          );
+        }
+      }
+
+      // Simulate additional processing time
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (mounted) {
+        _showSuccessDialog();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showSnackBar('Registration failed: ${e.toString()}');
+      }
     }
   }
 
@@ -892,7 +1065,7 @@ class _ProviderRegistrationScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              'Your application to become a ${widget.providerType.name} has been submitted successfully. We\'ll review it within 24-48 hours and notify you via email.',
+              'Your application to become a ${widget.providerType.name} has been submitted successfully. You are now listed in the TMed network and can start receiving appointment requests!',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
