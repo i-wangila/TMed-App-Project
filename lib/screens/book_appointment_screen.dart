@@ -562,7 +562,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         meetingLink:
             _selectedCommunicationType == CommunicationType.video ||
                 _selectedCommunicationType == CommunicationType.voice
-            ? 'https://meet.tmed.com/room/${DateTime.now().millisecondsSinceEpoch}'
+            ? 'https://meet.klinate.com/room/${DateTime.now().millisecondsSinceEpoch}'
             : null,
         chatRoomId: _selectedCommunicationType == CommunicationType.chat
             ? 'chat_${DateTime.now().millisecondsSinceEpoch}'

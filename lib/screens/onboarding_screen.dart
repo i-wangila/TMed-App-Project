@@ -21,12 +21,12 @@ class OnboardingScreen extends StatelessWidget {
 
               // App Title
               const Text(
-                'TMed',
+                'Klinate',
                 style: TextStyle(
-                  fontSize: 48,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                 ),
               ),
 
@@ -55,7 +55,7 @@ class OnboardingScreen extends StatelessWidget {
                   child: const Text(
                     'SIGN IN',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -81,7 +81,7 @@ class OnboardingScreen extends StatelessWidget {
                   child: const Text(
                     'SIGN UP',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -119,24 +119,24 @@ class OnboardingScreen extends StatelessWidget {
     return Column(
       children: [
         const Text(
-          'Welcome to TMed',
+          'Welcome to Klinate',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Connect with healthcare professionals online and find healthcare services from the comfort of your home',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 13,
               fontWeight: FontWeight.w400,
               color: Colors.grey[700],
-              height: 1.5,
+              height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
@@ -180,7 +180,7 @@ class OnboardingScreen extends StatelessWidget {
         Text(
           text,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.grey[700],
           ),

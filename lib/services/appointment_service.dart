@@ -8,7 +8,7 @@ class AppointmentService {
       id: '1',
       providerId: 'dr_sarah_21',
       providerName: 'Dr. Sarah Mwangi',
-      providerEmail: 'dr.sarah.mwangi@tmed.com',
+      providerEmail: 'dr.sarah.mwangi@klinate.com',
       patientId: 'patient_rony',
       patientName: 'Rony',
       patientEmail: 'rony@example.com',
@@ -18,13 +18,13 @@ class AppointmentService {
       amount: 2150.00,
       description: 'Cardiology consultation',
       chatRoomId: '1_chat',
-      meetingLink: 'https://meet.tmed.com/room/1',
+      meetingLink: 'https://meet.klinate.com/room/1',
     ),
     Appointment(
       id: '2',
       providerId: 'dr_sarah_21',
       providerName: 'Dr. Sarah Mwangi',
-      providerEmail: 'dr.sarah.mwangi@tmed.com',
+      providerEmail: 'dr.sarah.mwangi@klinate.com',
       patientId: 'patient_rony',
       patientName: 'Rony',
       patientEmail: 'rony@example.com',
@@ -39,7 +39,7 @@ class AppointmentService {
       id: '3',
       providerId: 'dr_john_45',
       providerName: 'Dr. John Kamau',
-      providerEmail: 'dr.john.kamau@tmed.com',
+      providerEmail: 'dr.john.kamau@klinate.com',
       patientId: 'patient_rony',
       patientName: 'Rony',
       patientEmail: 'rony@example.com',
@@ -48,13 +48,13 @@ class AppointmentService {
       status: AppointmentStatus.scheduled,
       amount: 1800.00,
       description: 'General consultation',
-      meetingLink: 'https://meet.tmed.com/room/3',
+      meetingLink: 'https://meet.klinate.com/room/3',
     ),
     Appointment(
       id: '4',
       providerId: 'dr_grace_12',
       providerName: 'Dr. Grace Wanjiku',
-      providerEmail: 'dr.grace.wanjiku@tmed.com',
+      providerEmail: 'dr.grace.wanjiku@klinate.com',
       patientId: 'patient_rony',
       patientName: 'Rony',
       patientEmail: 'rony@example.com',
@@ -166,7 +166,7 @@ class AppointmentService {
     // Automatically create a message for the appointment booking
     await MessageService.addMessage(
       senderId: 'system',
-      senderName: 'TMed System',
+      senderName: 'Klinate System',
       content:
           'Appointment booked with ${appointment.providerName} for ${_formatDateTime(appointment.dateTime)}. ${appointment.description}',
       type: MessageType.appointment,
@@ -203,7 +203,7 @@ class AppointmentService {
     if (index != -1) {
       final appointment = _appointments[index];
       final oldDateTime = appointment.dateTime;
-      
+
       // Update appointment with new date and ensure it's scheduled
       _appointments[index] = appointment.copyWith(
         dateTime: newDateTime,
@@ -214,7 +214,7 @@ class AppointmentService {
       // Automatically create a message for the appointment reschedule
       await MessageService.addMessage(
         senderId: 'system',
-        senderName: 'TMed System',
+        senderName: 'Klinate System',
         content:
             'Your appointment with ${appointment.providerName} has been rescheduled from ${_formatDateTime(oldDateTime)} to ${_formatDateTime(newDateTime)}.',
         type: MessageType.appointment,

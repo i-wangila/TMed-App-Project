@@ -12,7 +12,7 @@ class HealthcareProviderService {
       reviewCount: 127,
       location: 'Nairobi Hospital, Nairobi',
       phone: '+254740109195',
-      email: 'dr.sarah.mwangi@tmed.com',
+      email: 'dr.sarah.mwangi@klinate.com',
       services: [
         'Cardiology Consultation',
         'ECG',
@@ -52,7 +52,7 @@ class HealthcareProviderService {
       reviewCount: 89,
       location: 'Aga Khan Hospital, Nairobi',
       phone: '+254 700 234 567',
-      email: 'dr.john.kamau@tmed.com',
+      email: 'dr.john.kamau@klinate.com',
       services: [
         'General Consultation',
         'Health Checkups',
@@ -97,7 +97,7 @@ class HealthcareProviderService {
       reviewCount: 64,
       location: 'Wellness Center, Westlands',
       phone: '+254 700 345 678',
-      email: 'mary.njeri@tmed.com',
+      email: 'mary.njeri@klinate.com',
       services: [
         'Nutrition Counseling',
         'Diet Planning',
@@ -137,7 +137,7 @@ class HealthcareProviderService {
       reviewCount: 156,
       location: 'Karen Hospital, Nairobi',
       phone: '+254 700 456 789',
-      email: 'dr.grace.wanjiku@tmed.com',
+      email: 'dr.grace.wanjiku@klinate.com',
       services: [
         'Skin Consultation',
         'Acne Treatment',
@@ -176,7 +176,7 @@ class HealthcareProviderService {
       reviewCount: 203,
       location: 'Mater Hospital, Nairobi',
       phone: '+254 700 567 890',
-      email: 'dr.peter.mwangi@tmed.com',
+      email: 'dr.peter.mwangi@klinate.com',
       services: [
         'Joint Replacement',
         'Sports Medicine',
@@ -223,7 +223,7 @@ class HealthcareProviderService {
       reviewCount: 178,
       location: 'Gertrudes Children Hospital, Nairobi',
       phone: '+254 700 678 901',
-      email: 'dr.anne.njeri@tmed.com',
+      email: 'dr.anne.njeri@klinate.com',
       services: [
         'Child Healthcare',
         'Vaccinations',
@@ -263,7 +263,7 @@ class HealthcareProviderService {
       reviewCount: 89,
       location: 'Nairobi Hospital, Nairobi',
       phone: '+254 700 789 012',
-      email: 'mary.wanjiku@tmed.com',
+      email: 'mary.wanjiku@klinate.com',
       services: [
         'Patient Care',
         'Wound Dressing',
@@ -310,7 +310,7 @@ class HealthcareProviderService {
       reviewCount: 134,
       location: 'Rehab Center, Westlands',
       phone: '+254 700 890 123',
-      email: 'james.ochieng@tmed.com',
+      email: 'james.ochieng@klinate.com',
       services: [
         'Physical Therapy',
         'Sports Rehabilitation',
@@ -356,7 +356,7 @@ class HealthcareProviderService {
       reviewCount: 167,
       location: 'Mind Wellness Center, Karen',
       phone: '+254 700 901 234',
-      email: 'susan.akinyi@tmed.com',
+      email: 'susan.akinyi@klinate.com',
       services: [
         'Mental Health Counseling',
         'Cognitive Behavioral Therapy',
@@ -396,7 +396,7 @@ class HealthcareProviderService {
       reviewCount: 92,
       location: 'Fitness Plus Center, Kilimani',
       phone: '+254 700 012 345',
-      email: 'david.kimani@tmed.com',
+      email: 'david.kimani@klinate.com',
       services: [
         'Sports Nutrition',
         'Performance Enhancement',
@@ -443,7 +443,7 @@ class HealthcareProviderService {
       reviewCount: 145,
       location: 'Dental Care Center, Kilimani',
       phone: '+254740109195',
-      email: 'dr.michael.otieno@tmed.com',
+      email: 'dr.michael.otieno@klinate.com',
       services: [
         'General Dentistry',
         'Teeth Cleaning',
@@ -491,7 +491,7 @@ class HealthcareProviderService {
       reviewCount: 187,
       location: 'Eye Care Clinic, Westlands',
       phone: '+254 700 234 567',
-      email: 'dr.lucy.wambui@tmed.com',
+      email: 'dr.lucy.wambui@klinate.com',
       services: [
         'Eye Examination',
         'Cataract Surgery',
@@ -532,7 +532,7 @@ class HealthcareProviderService {
       reviewCount: 123,
       location: 'ENT Clinic, Upper Hill',
       phone: '+254 700 345 678',
-      email: 'dr.robert.maina@tmed.com',
+      email: 'dr.robert.maina@klinate.com',
       services: [
         'Ear Examination',
         'Nose Treatment',
@@ -573,7 +573,7 @@ class HealthcareProviderService {
       reviewCount: 98,
       location: 'Community Pharmacy, South B',
       phone: '+254 700 456 789',
-      email: 'jane.mutua@tmed.com',
+      email: 'jane.mutua@klinate.com',
       services: [
         'Medication Counseling',
         'Drug Interaction Checks',

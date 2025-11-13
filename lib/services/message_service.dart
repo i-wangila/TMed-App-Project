@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/message.dart';
 
 class MessageService {
-  static const String _storageKey = 'tmed_messages';
+  static const String _storageKey = 'klinate_messages';
   static final List<Message> _messages = [];
   static final List<VoidCallback> _listeners = [];
 
@@ -40,7 +40,7 @@ class MessageService {
         Message(
           id: '3',
           senderId: 'system',
-          senderName: 'TMed System',
+          senderName: 'Klinate System',
           content:
               'Your appointment with Dr. Sarah Mwangi is confirmed for tomorrow at 10:00 AM.',
           timestamp: DateTime.now().subtract(const Duration(hours: 6)),
@@ -51,7 +51,7 @@ class MessageService {
         Message(
           id: '4',
           senderId: 'system',
-          senderName: 'TMed System',
+          senderName: 'Klinate System',
           content:
               'Your prescription is ready for pickup at Goodlife Pharmacy, Westlands branch.',
           timestamp: DateTime.now().subtract(const Duration(days: 1)),
@@ -62,7 +62,7 @@ class MessageService {
         Message(
           id: '5',
           senderId: 'system',
-          senderName: 'TMed System',
+          senderName: 'Klinate System',
           content:
               'Payment of KES 2,150 has been processed successfully for your consultation.',
           timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
@@ -73,7 +73,7 @@ class MessageService {
         Message(
           id: '6',
           senderId: 'system',
-          senderName: 'TMed System',
+          senderName: 'Klinate System',
           content:
               'Reminder: You have an upcoming appointment in 24 hours with Dr. James Kiprotich.',
           timestamp: DateTime.now().subtract(const Duration(days: 2)),
@@ -232,7 +232,7 @@ class MessageService {
     final message = Message(
       id: 'apt_msg_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'system',
-      senderName: 'TMed System',
+      senderName: 'Klinate System',
       content: 'Appointment booked with $providerName. $appointmentDetails',
       timestamp: DateTime.now(),
       type: MessageType.appointment,
@@ -272,7 +272,7 @@ class MessageService {
     final message = Message(
       id: 'system_msg_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'system',
-      senderName: 'TMed System',
+      senderName: 'Klinate System',
       content: content,
       timestamp: DateTime.now(),
       type: type,

@@ -683,7 +683,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         children: [
           Expanded(
             child: Text(
-              'TMed',
+              'Klinate',
               style: TextStyle(
                 fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
                 fontWeight: FontWeight.bold,

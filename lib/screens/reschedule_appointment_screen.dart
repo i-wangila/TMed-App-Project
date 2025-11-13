@@ -467,6 +467,10 @@ class _RescheduleAppointmentScreenState
                           widget.isBookingAgain
                               ? 'Book Appointment'
                               : 'Reschedule',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                 ),
               ),

@@ -442,12 +442,18 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
 
       if (image != null) {
         setState(() {
-          _selectedFilePath = image.path;
+          if (kIsWeb) {
+            // For web, use the path directly (it's a blob URL)
+            _selectedFilePath = image.path;
+          } else {
+            // For mobile, use the file path
+            _selectedFilePath = image.path;
+          }
           _selectedFileName = image.name;
         });
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to pick image from gallery');
+      _showErrorSnackBar('Failed to pick image from gallery: ${e.toString()}');
     }
   }
 
@@ -457,17 +463,23 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
         type: FileType.custom,
         allowedExtensions: ['pdf'],
         allowMultiple: false,
+        withData: kIsWeb, // For web, we need the bytes
       );
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
         setState(() {
-          _selectedFilePath = file.path;
+          if (kIsWeb) {
+            // For web, we'll use the bytes later
+            _selectedFilePath = file.name; // Store name temporarily
+          } else {
+            _selectedFilePath = file.path;
+          }
           _selectedFileName = file.name;
         });
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to pick PDF file');
+      _showErrorSnackBar('Failed to pick PDF file: ${e.toString()}');
     }
   }
 

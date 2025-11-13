@@ -40,7 +40,7 @@ class FAQsScreen extends StatelessWidget {
             context,
             question: 'What payment methods are accepted?',
             answer:
-                'We accept M-Pesa, bank transfers, and credit/debit cards. You can also use your TMed wallet for quick and easy payments.',
+                'We accept M-Pesa, bank transfers, and credit/debit cards. You can also use your Klinate wallet for quick and easy payments.',
           ),
           _buildFAQItem(
             context,
@@ -74,7 +74,7 @@ class FAQsScreen extends StatelessWidget {
           ),
           _buildFAQItem(
             context,
-            question: 'How do I become a healthcare provider on TMed?',
+            question: 'How do I become a healthcare provider on Klinate?',
             answer:
                 'Tap on the Profile icon, then select "Become a Healthcare Provider". Fill in your professional details, upload your credentials, and submit for verification. Our team will review and approve your application.',
           ),

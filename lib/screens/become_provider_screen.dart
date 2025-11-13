@@ -65,16 +65,16 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         const Text(
           'Become a Healthcare Provider',
           style: TextStyle(
-            fontSize: 32,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: Colors.black,
             height: 1.2,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Text(
-          'Join TMed\'s network of healthcare professionals and facilities. Connect with patients, grow your practice, and make healthcare more accessible.',
-          style: TextStyle(fontSize: 18, color: Colors.grey[600], height: 1.5),
+          'Join Klinate\'s network of healthcare professionals and facilities. Connect with patients, grow your practice, and make healthcare more accessible.',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.4),
         ),
       ],
     );
@@ -112,9 +112,9 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Why join TMed?',
+          'Why join Klinate?',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
@@ -153,7 +153,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
@@ -162,7 +162,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
                 Text(
                   description,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     color: Colors.grey[600],
                     height: 1.4,
                   ),
@@ -209,7 +209,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         const Text(
           'How it works',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
@@ -276,7 +276,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
@@ -285,7 +285,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
               Text(
                 description,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 13,
                   color: Colors.grey[600],
                   height: 1.4,
                 ),
@@ -319,17 +319,17 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
               const Text(
                 'Earning Potential',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            'Healthcare providers on TMed earn competitive rates:',
-            style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+            'Healthcare providers on Klinate earn competitive rates:',
+            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
           ),
           const SizedBox(height: 12),
           _buildEarningItem(
@@ -345,7 +345,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
           Text(
             '* Earnings vary based on specialization, experience, and service type',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 11,
               color: Colors.grey[600],
               fontStyle: FontStyle.italic,
             ),
@@ -363,12 +363,12 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         children: [
           Text(
             service,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
           Text(
             amount,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 13,
               fontWeight: FontWeight.bold,
               color: Colors.green[700],
             ),
@@ -400,7 +400,11 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         ),
         child: const Text(
           'Get Started',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
       ),
     );
@@ -410,17 +414,17 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
     return Column(
       children: [
         Text(
-          'By continuing, you agree to TMed\'s Terms of Service and Privacy Policy for Healthcare Providers.',
+          'By continuing, you agree to Klinate\'s Terms of Service and Privacy Policy for Healthcare Providers.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.4),
+          style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               'Questions? ',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             GestureDetector(
               onTap: () {
@@ -429,7 +433,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
               child: const Text(
                 'Contact Support',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   color: Colors.blue,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,

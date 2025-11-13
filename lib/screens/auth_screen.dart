@@ -42,7 +42,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final isSmallScreen = ResponsiveUtils.isSmallScreen(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFE8F4F0),
       appBar: AppBar(
@@ -54,7 +54,7 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             IconButton(
               icon: Icon(
-                Icons.arrow_back, 
+                Icons.arrow_back,
                 color: Colors.black,
                 size: isSmallScreen ? 20 : 24,
               ),
@@ -62,7 +62,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             const Spacer(),
             Text(
-              'TMed',
+              'Klinate',
               style: TextStyle(
                 fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
                 fontWeight: FontWeight.bold,
@@ -84,7 +84,9 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 4),
+                  ),
 
                   // Title with animation
                   AnimatedSwitcher(
@@ -93,7 +95,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       _isSignIn ? 'HELLO SIGN IN' : 'CREATE YOUR\nACCOUNT',
                       key: ValueKey(_isSignIn),
                       style: TextStyle(
-                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 22),
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(
+                          context,
+                          22,
+                        ),
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
@@ -101,18 +106,28 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
 
-                  SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 12)),
+                  SizedBox(
+                    height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                  ),
 
                   // Form Container
                   Align(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: ResponsiveUtils.isSmallScreen(context) ? double.infinity : 380,
+                        maxWidth: ResponsiveUtils.isSmallScreen(context)
+                            ? double.infinity
+                            : 380,
                       ),
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveUtils.getResponsiveSpacing(context, 14),
-                          vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                          horizontal: ResponsiveUtils.getResponsiveSpacing(
+                            context,
+                            14,
+                          ),
+                          vertical: ResponsiveUtils.getResponsiveSpacing(
+                            context,
+                            12,
+                          ),
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -132,7 +147,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                   icon: Icons.person_outline,
                                 ),
                                 SizedBox(
-                                  height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                  height: ResponsiveUtils.getResponsiveSpacing(
+                                    context,
+                                    12,
+                                  ),
                                 ),
                                 _buildTextField(
                                   controller: _lastNameController,
@@ -140,17 +158,25 @@ class _AuthScreenState extends State<AuthScreen> {
                                   icon: Icons.person_outline,
                                 ),
                                 SizedBox(
-                                  height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                  height: ResponsiveUtils.getResponsiveSpacing(
+                                    context,
+                                    12,
+                                  ),
                                 ),
                               ],
                               _buildTextField(
                                 controller: _emailController,
-                                hintText: _isSignIn ? 'Email' : 'Phone or Email',
+                                hintText: _isSignIn
+                                    ? 'Email'
+                                    : 'Phone or Email',
                                 icon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
                               ),
                               SizedBox(
-                                height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                height: ResponsiveUtils.getResponsiveSpacing(
+                                  context,
+                                  12,
+                                ),
                               ),
                               _buildTextField(
                                 controller: _passwordController,
@@ -159,9 +185,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                 obscureText: _obscurePassword,
                                 suffixIcon: IconButton(
                                   icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
                                     color: Colors.grey,
-                                    size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+                                    size: ResponsiveUtils.isSmallScreen(context)
+                                        ? 20
+                                        : 24,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -169,17 +199,25 @@ class _AuthScreenState extends State<AuthScreen> {
                                     });
                                   },
                                 ),
-                                customValidator: _isSignIn ? null : _validatePassword,
+                                customValidator: _isSignIn
+                                    ? null
+                                    : _validatePassword,
                               ),
                               if (!_isSignIn) ...[
                                 SizedBox(
-                                  height: ResponsiveUtils.getResponsiveSpacing(context, 8),
+                                  height: ResponsiveUtils.getResponsiveSpacing(
+                                    context,
+                                    8,
+                                  ),
                                 ),
                                 _buildPasswordRequirements(),
                               ],
                               if (!_isSignIn) ...[
                                 SizedBox(
-                                  height: ResponsiveUtils.getResponsiveSpacing(context, 16),
+                                  height: ResponsiveUtils.getResponsiveSpacing(
+                                    context,
+                                    16,
+                                  ),
                                 ),
                                 _buildTextField(
                                   controller: _confirmPasswordController,
@@ -188,13 +226,19 @@ class _AuthScreenState extends State<AuthScreen> {
                                   obscureText: _obscureConfirmPassword,
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                      _obscureConfirmPassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                       color: Colors.grey,
-                                      size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+                                      size:
+                                          ResponsiveUtils.isSmallScreen(context)
+                                          ? 20
+                                          : 24,
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                                        _obscureConfirmPassword =
+                                            !_obscureConfirmPassword;
                                       });
                                     },
                                   ),
@@ -203,7 +247,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               ],
                               if (_isSignIn) ...[
                                 SizedBox(
-                                  height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                  height: ResponsiveUtils.getResponsiveSpacing(
+                                    context,
+                                    12,
+                                  ),
                                 ),
                                 Align(
                                   alignment: Alignment.centerRight,
@@ -215,14 +262,21 @@ class _AuthScreenState extends State<AuthScreen> {
                                       'Forgot password?',
                                       style: TextStyle(
                                         color: Colors.black,
-                                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                                        fontSize:
+                                            ResponsiveUtils.getResponsiveFontSize(
+                                              context,
+                                              14,
+                                            ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ],
                               SizedBox(
-                                height: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                height: ResponsiveUtils.getResponsiveSpacing(
+                                  context,
+                                  12,
+                                ),
                               ),
                               SizedBox(
                                 width: double.infinity,
@@ -232,7 +286,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                     backgroundColor: Colors.white,
                                     foregroundColor: Colors.black,
                                     padding: EdgeInsets.symmetric(
-                                      vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+                                      vertical:
+                                          ResponsiveUtils.getResponsiveSpacing(
+                                            context,
+                                            12,
+                                          ),
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(30),
@@ -245,17 +303,32 @@ class _AuthScreenState extends State<AuthScreen> {
                                   ),
                                   child: _isLoading
                                       ? SizedBox(
-                                          height: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
-                                          width: ResponsiveUtils.isSmallScreen(context) ? 18 : 20,
-                                          child: const CircularProgressIndicator(
-                                            color: Colors.black,
-                                            strokeWidth: 2,
-                                          ),
+                                          height:
+                                              ResponsiveUtils.isSmallScreen(
+                                                context,
+                                              )
+                                              ? 18
+                                              : 20,
+                                          width:
+                                              ResponsiveUtils.isSmallScreen(
+                                                context,
+                                              )
+                                              ? 18
+                                              : 20,
+                                          child:
+                                              const CircularProgressIndicator(
+                                                color: Colors.black,
+                                                strokeWidth: 2,
+                                              ),
                                         )
                                       : Text(
                                           _isSignIn ? 'SIGN IN' : 'SIGN UP',
                                           style: TextStyle(
-                                            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                                            fontSize:
+                                                ResponsiveUtils.getResponsiveFontSize(
+                                                  context,
+                                                  16,
+                                                ),
                                             fontWeight: FontWeight.bold,
                                             color: Colors.black,
                                           ),
@@ -263,16 +336,25 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ),
                               ),
                               SizedBox(
-                                height: ResponsiveUtils.getResponsiveSpacing(context, 10),
+                                height: ResponsiveUtils.getResponsiveSpacing(
+                                  context,
+                                  10,
+                                ),
                               ),
                               Wrap(
                                 alignment: WrapAlignment.center,
                                 children: [
                                   Text(
-                                    _isSignIn ? "Don't have an account? " : "Have an account? ",
+                                    _isSignIn
+                                        ? "Don't have an account? "
+                                        : "Have an account? ",
                                     style: TextStyle(
                                       color: Colors.grey,
-                                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                                      fontSize:
+                                          ResponsiveUtils.getResponsiveFontSize(
+                                            context,
+                                            14,
+                                          ),
                                     ),
                                   ),
                                   GestureDetector(
@@ -286,7 +368,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                       _isSignIn ? 'SIGN UP' : 'SIGN IN',
                                       style: TextStyle(
                                         color: Colors.black,
-                                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                                        fontSize:
+                                            ResponsiveUtils.getResponsiveFontSize(
+                                              context,
+                                              14,
+                                            ),
                                         fontWeight: FontWeight.w600,
                                         decoration: TextDecoration.underline,
                                       ),
@@ -332,7 +418,7 @@ class _AuthScreenState extends State<AuthScreen> {
           fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
         ),
         prefixIcon: Icon(
-          icon, 
+          icon,
           color: Colors.grey,
           size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
         ),
@@ -405,7 +491,9 @@ class _AuthScreenState extends State<AuthScreen> {
     final password = _passwordController.text;
 
     return Container(
-      padding: EdgeInsets.all(ResponsiveUtils.getResponsiveSpacing(context, 10)),
+      padding: EdgeInsets.all(
+        ResponsiveUtils.getResponsiveSpacing(context, 10),
+      ),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),

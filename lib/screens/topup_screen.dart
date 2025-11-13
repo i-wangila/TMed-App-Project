@@ -576,7 +576,7 @@ class BankTransferDialog extends StatelessWidget {
             'Transfer to:',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          const Text('Bank: TMed Bank'),
+          const Text('Bank: Klinate Bank'),
           const Text('Account: 1234567890'),
           const Text('Reference: Your phone number'),
           const SizedBox(height: 16),

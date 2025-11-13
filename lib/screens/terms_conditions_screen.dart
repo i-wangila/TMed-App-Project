@@ -18,7 +18,7 @@ class TermsConditionsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'TMed Terms & Conditions',
+              'Klinate Terms & Conditions',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -29,11 +29,11 @@ class TermsConditionsScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSection(
               '1. Acceptance of Terms',
-              'By accessing and using TMed, you accept and agree to be bound by the terms and provision of this agreement.',
+              'By accessing and using Klinate, you accept and agree to be bound by the terms and provision of this agreement.',
             ),
             _buildSection(
               '2. Medical Services',
-              'TMed provides telemedicine services including video consultations, chat consultations, and appointment booking. These services are provided by licensed healthcare professionals.',
+              'Klinate provides telemedicine services including video consultations, chat consultations, and appointment booking. These services are provided by licensed healthcare professionals.',
             ),
             _buildSection(
               '3. User Responsibilities',
@@ -49,7 +49,7 @@ class TermsConditionsScreen extends StatelessWidget {
             ),
             _buildSection(
               '6. Limitation of Liability',
-              'TMed is not liable for any damages arising from the use of our services. Emergency medical situations should be handled by calling emergency services.',
+              'Klinate is not liable for any damages arising from the use of our services. Emergency medical situations should be handled by calling emergency services.',
             ),
             _buildSection(
               '7. Modifications',
@@ -61,8 +61,9 @@ class TermsConditionsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            const Text('Email: support@tmed.com'),
+            const Text('Email: support@klinate.com'),
             const Text('Phone: +254740109195'),
+            const Text('Website: www.klinate.com'),
             const Text('Address: Nairobi, Kenya'),
           ],
         ),

@@ -18,7 +18,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'TMed Privacy Policy',
+              'Klinate Privacy Policy',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -79,8 +79,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     'If you have questions about this privacy policy:',
                   ),
                   const SizedBox(height: 8),
-                  const Text('Email: privacy@tmed.com'),
+                  const Text('Email: privacy@klinate.com'),
                   const Text('Phone: +254740109195'),
+                  const Text('Website: www.klinate.com'),
                 ],
               ),
             ),

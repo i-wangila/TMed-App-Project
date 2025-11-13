@@ -1,10 +1,10 @@
-# TMed - Virtual Medical Clinic App
+# Klinate - Virtual Medical Clinic App
 
 A comprehensive Flutter-based telemedicine application that connects patients with healthcare providers across Kenya, offering virtual consultations, appointment management, real-time communication, and integrated healthcare services.
 
 ## 🏥 Overview
 
-TMed is a modern, production-ready healthcare platform designed to make medical services accessible through digital channels. The app provides seamless connections between patients and various healthcare providers including doctors, hospitals, pharmacies, laboratories, and nutritionists with full communication capabilities including voice calls, video calls, and real-time messaging.
+Klinate is a modern, production-ready healthcare platform designed to make medical services accessible through digital channels. The app provides seamless connections between patients and various healthcare providers including doctors, hospitals, pharmacies, laboratories, and nutritionists with full communication capabilities including voice calls, video calls, and real-time messaging.
 
 ## ✨ Features
 
@@ -79,7 +79,7 @@ TMed is a modern, production-ready healthcare platform designed to make medical 
 ### 📞 Customer Support & Contact
 - **Updated Contact Information**: 
   - Phone: +254740109195
-  - Email: support@tmed.com
+  - Email: support@klinate.com
 - **Contact Forms**: Direct message sending to support team
 - **Business Hours**: Clear availability and response time information
 - **Help & Support**: Comprehensive FAQ and support system
@@ -165,8 +165,8 @@ lib/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/tmed_app.git
-   cd tmed_app
+   git clone https://github.com/your-username/klinate_app.git
+   cd klinate_app
    ```
 
 2. **Install dependencies**
@@ -286,10 +286,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support & Contact
 
 For support, inquiries, and technical assistance:
-- **Email**: support@tmed.com
+- **Email**: support@klinate.com
 - **Phone**: +254740109195 (Available during business hours)
 - **Business Hours**: Monday to Friday, 8:00 AM - 5:00 PM (EAT)
 - **Response Time**: We reply within 24 hours
+- **Website**: www.klinate.com
 - **Address**: Posta House, Off Kenyatta Avenue, P.O. Box 38256 - 00100, Nairobi, Kenya
 
 ### In-App Support
@@ -318,8 +319,25 @@ For support, inquiries, and technical assistance:
 - **Quick Actions**: Call, video, and message buttons throughout the app
 - **Provider Registration**: Complete onboarding system for healthcare providers
 - **Facility Management**: Full facility profile and service management
-- **Real-time Features**: Live chat, call management, and instant n
+- **Real-time Features**: Live chat, call management, and instant notifications
+- **Optimized UI/UX**: Pure white text on all dark backgrounds for maximum readability
+- **Clean Codebase**: Removed obsolete files and IDE-specific configurations
+
+## 🎨 UI/UX Improvements
+
+### Accessibility & Readability
+- All text on dark backgrounds (black buttons, step indicators) uses pure white color
+- Consistent color scheme throughout the application
+- High contrast ratios for better accessibility
+- Professional and clean interface design
+
+### Recent Updates
+- Fixed text visibility in "Become a Healthcare Provider" flow
+- Ensured all button text is clearly visible with white color on black backgrounds
+- Optimized step indicators with proper white text on black circles
+- Removed .vscode and .idea IDE configuration folders
+- Cleaned up temporary files for a leaner project structure
 
 ---
 
-**TMed** - Making healthcare accessible, one tap at a time. 🏥📱
+**Klinate** - Making healthcare accessible, one tap at a time. 🏥📱

@@ -4,11 +4,13 @@ import '../services/appointment_service.dart';
 import '../services/provider_availability_service.dart';
 import '../services/call_service.dart';
 import '../services/user_service.dart';
+import '../services/healthcare_provider_service.dart';
 import '../models/appointment.dart';
 import '../utils/responsive_utils.dart';
 import 'reschedule_appointment_screen.dart';
 import 'rate_provider_screen.dart';
 import 'call_screen.dart';
+import 'book_appointment_screen.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -416,9 +418,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {
-                // Handle book again
-              },
+              onPressed: () => _bookAgain(appointment),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black,
                 side: const BorderSide(color: Colors.black),
@@ -995,6 +995,46 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
         );
       }
+    }
+  }
+
+  void _bookAgain(Appointment appointment) async {
+    // Find the provider from the appointment
+    final provider = HealthcareProviderService.getProviderById(
+      appointment.providerId,
+    );
+
+    if (provider == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Provider not found. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Navigate to book appointment screen with the same provider
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookAppointmentScreen(provider: provider),
+      ),
+    );
+
+    // If appointment was booked successfully, refresh the list
+    if (result == true && mounted) {
+      setState(() {
+        _selectedTabIndex = 1; // Switch to "Upcoming" tab
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('New appointment booked successfully!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 }

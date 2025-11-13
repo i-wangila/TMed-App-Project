@@ -10,7 +10,7 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('About TMed'),
+        title: const Text('About Klinate'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -61,7 +61,7 @@ class AboutScreen extends StatelessWidget {
           ),
           SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 16)),
           Text(
-            'TMed',
+            'Klinate',
             style: TextStyle(
               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
               fontWeight: FontWeight.bold,
@@ -104,13 +104,13 @@ class AboutScreen extends StatelessWidget {
   Widget _buildAboutSection(BuildContext context) {
     return _buildSection(
       context: context,
-      title: 'About TMed',
+      title: 'About Klinate',
       icon: Icons.info_outline,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'TMed is a comprehensive telemedicine and healthcare platform designed to revolutionize how patients access healthcare services. Our mission is to make quality healthcare accessible, affordable, and convenient for everyone.',
+            'Klinate is a comprehensive telemedicine and healthcare platform designed to revolutionize how patients access healthcare services. Our mission is to make quality healthcare accessible, affordable, and convenient for everyone.',
             style: TextStyle(
               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
               color: Colors.grey[700],
@@ -119,7 +119,7 @@ class AboutScreen extends StatelessWidget {
           ),
           SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 16)),
           Text(
-            'Built with cutting-edge technology, TMed connects patients with healthcare providers, facilitates secure communication, manages medical records, and provides a seamless healthcare experience from the comfort of your home.',
+            'Built with cutting-edge technology, Klinate connects patients with healthcare providers, facilitates secure communication, manages medical records, and provides a seamless healthcare experience from the comfort of your home.',
             style: TextStyle(
               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
               color: Colors.grey[700],
@@ -136,32 +136,33 @@ class AboutScreen extends StatelessWidget {
       {
         'icon': Icons.video_call,
         'title': 'Video Consultations',
-        'description': 'High-quality video calls with healthcare providers'
+        'description': 'High-quality video calls with healthcare providers',
       },
       {
         'icon': Icons.chat,
         'title': 'Secure Messaging',
-        'description': 'HIPAA-compliant communication with your doctors'
+        'description': 'HIPAA-compliant communication with your doctors',
       },
       {
         'icon': Icons.calendar_today,
         'title': 'Appointment Booking',
-        'description': 'Easy scheduling with your preferred healthcare providers'
+        'description':
+            'Easy scheduling with your preferred healthcare providers',
       },
       {
         'icon': Icons.account_balance_wallet,
         'title': 'Digital Wallet',
-        'description': 'Secure payments with multiple payment methods'
+        'description': 'Secure payments with multiple payment methods',
       },
       {
         'icon': Icons.medical_services,
         'title': 'Health Records',
-        'description': 'Comprehensive digital health record management'
+        'description': 'Comprehensive digital health record management',
       },
       {
         'icon': Icons.local_pharmacy,
         'title': 'Pharmacy Integration',
-        'description': 'Direct prescription delivery and pharmacy services'
+        'description': 'Direct prescription delivery and pharmacy services',
       },
     ];
 
@@ -170,7 +171,9 @@ class AboutScreen extends StatelessWidget {
       title: 'Key Features',
       icon: Icons.star,
       content: Column(
-        children: features.map((feature) => _buildFeatureItem(context, feature)).toList(),
+        children: features
+            .map((feature) => _buildFeatureItem(context, feature))
+            .toList(),
       ),
     );
   }
@@ -178,7 +181,7 @@ class AboutScreen extends StatelessWidget {
   Widget _buildFeatureItem(BuildContext context, Map<String, dynamic> feature) {
     return Container(
       margin: EdgeInsets.only(
-        bottom: ResponsiveUtils.getResponsiveSpacing(context, 12)
+        bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
       ),
       padding: ResponsiveUtils.getResponsivePadding(context),
       decoration: BoxDecoration(
@@ -189,7 +192,9 @@ class AboutScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(ResponsiveUtils.getResponsiveSpacing(context, 8)),
+            padding: EdgeInsets.all(
+              ResponsiveUtils.getResponsiveSpacing(context, 8),
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -209,16 +214,24 @@ class AboutScreen extends StatelessWidget {
                 Text(
                   feature['title'],
                   style: TextStyle(
-                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      16,
+                    ),
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+                SizedBox(
+                  height: ResponsiveUtils.getResponsiveSpacing(context, 4),
+                ),
                 Text(
                   feature['description'],
                   style: TextStyle(
-                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      14,
+                    ),
                     color: Colors.grey[600],
                   ),
                 ),
@@ -256,7 +269,10 @@ class AboutScreen extends StatelessWidget {
                 child: Text(
                   'Improve healthcare accessibility',
                   style: TextStyle(
-                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      14,
+                    ),
                     color: Colors.grey[700],
                   ),
                 ),
@@ -272,7 +288,10 @@ class AboutScreen extends StatelessWidget {
                 child: Text(
                   'Reduce healthcare costs',
                   style: TextStyle(
-                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      14,
+                    ),
                     color: Colors.grey[700],
                   ),
                 ),
@@ -288,7 +307,10 @@ class AboutScreen extends StatelessWidget {
                 child: Text(
                   'Enhance patient experience',
                   style: TextStyle(
-                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      14,
+                    ),
                     color: Colors.grey[700],
                   ),
                 ),
@@ -311,8 +333,8 @@ class AboutScreen extends StatelessWidget {
             context: context,
             icon: Icons.email,
             title: 'Email Support',
-            subtitle: 'support@tmed.com',
-            onTap: () => _launchEmail('support@tmed.com'),
+            subtitle: 'support@klinate.com',
+            onTap: () => _launchEmail('support@klinate.com'),
           ),
           _buildContactItem(
             context: context,
@@ -325,8 +347,8 @@ class AboutScreen extends StatelessWidget {
             context: context,
             icon: Icons.language,
             title: 'Website',
-            subtitle: 'www.tmed.com',
-            onTap: () => _launchWebsite('https://www.tmed.com'),
+            subtitle: 'www.klinate.com',
+            onTap: () => _launchWebsite('https://www.klinate.com'),
           ),
           _buildContactItem(
             context: context,
@@ -351,7 +373,7 @@ class AboutScreen extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: EdgeInsets.only(
-          bottom: ResponsiveUtils.getResponsiveSpacing(context, 8)
+          bottom: ResponsiveUtils.getResponsiveSpacing(context, 8),
         ),
         padding: EdgeInsets.symmetric(
           horizontal: ResponsiveUtils.getResponsiveSpacing(context, 12),
@@ -372,7 +394,10 @@ class AboutScreen extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        14,
+                      ),
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -380,7 +405,10 @@ class AboutScreen extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
+                      fontSize: ResponsiveUtils.getResponsiveFontSize(
+                        context,
+                        13,
+                      ),
                       color: onTap != null ? Colors.black : Colors.grey[600],
                     ),
                   ),
@@ -406,7 +434,11 @@ class AboutScreen extends StatelessWidget {
           _buildTechItem(context, 'Security', 'End-to-End Encryption'),
           _buildTechItem(context, 'Compliance', 'HIPAA Compliant'),
           _buildTechItem(context, 'Supported Platforms', 'iOS, Android, Web'),
-          _buildTechItem(context, 'Data Storage', 'Secure Cloud Infrastructure'),
+          _buildTechItem(
+            context,
+            'Data Storage',
+            'Secure Cloud Infrastructure',
+          ),
           _buildTechItem(context, 'Payment Processing', 'PCI DSS Compliant'),
         ],
       ),
@@ -416,7 +448,7 @@ class AboutScreen extends StatelessWidget {
   Widget _buildTechItem(BuildContext context, String label, String value) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: ResponsiveUtils.getResponsiveSpacing(context, 8)
+        bottom: ResponsiveUtils.getResponsiveSpacing(context, 8),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,7 +509,9 @@ class AboutScreen extends StatelessWidget {
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+                SizedBox(
+                  width: ResponsiveUtils.getResponsiveSpacing(context, 16),
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,25 +519,44 @@ class AboutScreen extends StatelessWidget {
                       Text(
                         'Isaac Wabwile Wangila',
                         style: TextStyle(
-                          fontSize: ResponsiveUtils.getResponsiveFontSize(context, 18),
+                          fontSize: ResponsiveUtils.getResponsiveFontSize(
+                            context,
+                            18,
+                          ),
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
                       ),
-                      SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+                      SizedBox(
+                        height: ResponsiveUtils.getResponsiveSpacing(
+                          context,
+                          4,
+                        ),
+                      ),
                       Text(
                         'Author & Developer',
                         style: TextStyle(
-                          fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                          fontSize: ResponsiveUtils.getResponsiveFontSize(
+                            context,
+                            14,
+                          ),
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 8)),
+                      SizedBox(
+                        height: ResponsiveUtils.getResponsiveSpacing(
+                          context,
+                          8,
+                        ),
+                      ),
                       Text(
                         'Full-stack developer passionate about creating innovative healthcare solutions that make a difference in people\'s lives.',
                         style: TextStyle(
-                          fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                          fontSize: ResponsiveUtils.getResponsiveFontSize(
+                            context,
+                            14,
+                          ),
                           color: Colors.grey[700],
                           height: 1.4,
                         ),
@@ -539,7 +592,9 @@ class AboutScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(ResponsiveUtils.getResponsiveSpacing(context, 8)),
+                padding: EdgeInsets.all(
+                  ResponsiveUtils.getResponsiveSpacing(context, 8),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -551,12 +606,17 @@ class AboutScreen extends StatelessWidget {
                   size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
                 ),
               ),
-              SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 12)),
+              SizedBox(
+                width: ResponsiveUtils.getResponsiveSpacing(context, 12),
+              ),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(
+                      context,
+                      20,
+                    ),
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
@@ -585,7 +645,7 @@ class AboutScreen extends StatelessWidget {
           Divider(color: Colors.grey[300]),
           SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 8)),
           Text(
-            '© 2025 TMed. All rights reserved.',
+            '© 2025 Klinate. All rights reserved.',
             style: TextStyle(
               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
               fontWeight: FontWeight.w600,
@@ -613,7 +673,7 @@ class AboutScreen extends StatelessWidget {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: email,
-      query: 'subject=TMed Support Request',
+      query: 'subject=Klinate Support Request',
     );
     if (await canLaunchUrl(emailUri)) {
       await launchUrl(emailUri);

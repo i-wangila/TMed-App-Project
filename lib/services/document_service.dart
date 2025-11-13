@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/document.dart';
 
 class DocumentService {
-  static const String _storageKey = 'tmed_documents';
+  static const String _storageKey = 'klinate_documents';
   static final List<Document> _documents = [];
   static bool _isInitialized = false;
 
@@ -56,37 +56,51 @@ class DocumentService {
     String? notes,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return false;
+      String finalFilePath = filePath;
+      String fileName = filePath.split('/').last;
+      String fileExtension = fileName.split('.').last;
+      int fileSize = 0;
+
+      // For non-web platforms, copy the file
+      try {
+        final file = File(filePath);
+        if (await file.exists()) {
+          // Copy file to app documents directory
+          final appDir = await getApplicationDocumentsDirectory();
+          final newFileName =
+              'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          final newFilePath = '${appDir.path}/documents/$newFileName';
+
+          // Create documents directory if it doesn't exist
+          final documentsDir = Directory('${appDir.path}/documents');
+          if (!await documentsDir.exists()) {
+            await documentsDir.create(recursive: true);
+          }
+
+          // Copy file
+          final newFile = await file.copy(newFilePath);
+          final fileStats = await newFile.stat();
+          finalFilePath = newFilePath;
+          fileSize = fileStats.size;
+        } else {
+          // For web or if file doesn't exist, use the path as-is
+          finalFilePath = filePath;
+          fileSize = 0;
+        }
+      } catch (e) {
+        // If file operations fail (e.g., on web), use the path as-is
+        finalFilePath = filePath;
+        fileSize = 0;
       }
-
-      // Copy file to app documents directory
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName = filePath.split('/').last;
-      final fileExtension = fileName.split('.').last;
-      final newFileName =
-          'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-      final newFilePath = '${appDir.path}/documents/$newFileName';
-
-      // Create documents directory if it doesn't exist
-      final documentsDir = Directory('${appDir.path}/documents');
-      if (!await documentsDir.exists()) {
-        await documentsDir.create(recursive: true);
-      }
-
-      // Copy file
-      final newFile = await file.copy(newFilePath);
-      final fileStats = await newFile.stat();
 
       final document = Document(
         id: 'doc_${DateTime.now().millisecondsSinceEpoch}',
         name: name,
         type: type,
-        filePath: newFilePath,
+        filePath: finalFilePath,
         fileName: fileName,
         fileExtension: fileExtension,
-        fileSizeBytes: fileStats.size,
+        fileSizeBytes: fileSize,
         uploadedAt: DateTime.now(),
         expiryDate: expiryDate,
         status: DocumentStatus.pending,
@@ -168,38 +182,54 @@ class DocumentService {
 
       final oldDocument = _documents[index];
 
-      // Delete old file
-      final oldFile = File(oldDocument.filePath);
-      if (await oldFile.exists()) {
-        await oldFile.delete();
+      // Try to delete old file
+      try {
+        final oldFile = File(oldDocument.filePath);
+        if (await oldFile.exists()) {
+          await oldFile.delete();
+        }
+      } catch (e) {
+        // Ignore deletion errors
       }
 
-      // Copy new file
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return false;
+      String finalFilePath = filePath;
+      String fileName = filePath.split('/').last;
+      String fileExtension = fileName.split('.').last;
+      int fileSize = 0;
+
+      // Try to copy new file
+      try {
+        final file = File(filePath);
+        if (await file.exists()) {
+          final appDir = await getApplicationDocumentsDirectory();
+          final newFileName =
+              'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          final newFilePath = '${appDir.path}/documents/$newFileName';
+
+          final newFile = await file.copy(newFilePath);
+          final fileStats = await newFile.stat();
+          finalFilePath = newFilePath;
+          fileSize = fileStats.size;
+        } else {
+          finalFilePath = filePath;
+          fileSize = 0;
+        }
+      } catch (e) {
+        // Use the path as-is if copy fails
+        finalFilePath = filePath;
+        fileSize = 0;
       }
-
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName = filePath.split('/').last;
-      final fileExtension = fileName.split('.').last;
-      final newFileName =
-          'doc_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-      final newFilePath = '${appDir.path}/documents/$newFileName';
-
-      final newFile = await file.copy(newFilePath);
-      final fileStats = await newFile.stat();
 
       _documents[index] = oldDocument.copyWith(
-        filePath: newFilePath,
+        filePath: finalFilePath,
         fileName: fileName,
         fileExtension: fileExtension,
-        fileSizeBytes: fileStats.size,
+        fileSizeBytes: fileSize,
         uploadedAt: DateTime.now(),
         expiryDate: expiryDate,
         status: DocumentStatus.pending,
         notes: notes,
-        rejectionReason: null, // Clear previous rejection reason
+        rejectionReason: null,
       );
 
       await _saveDocuments();
@@ -217,10 +247,14 @@ class DocumentService {
 
       final document = _documents[index];
 
-      // Delete file
-      final file = File(document.filePath);
-      if (await file.exists()) {
-        await file.delete();
+      // Try to delete file
+      try {
+        final file = File(document.filePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        // Ignore file deletion errors
       }
 
       _documents.removeAt(index);
@@ -290,13 +324,13 @@ class DocumentService {
   static Future<void> clearAllDocuments() async {
     // Delete all files
     for (final doc in _documents) {
-      final file = File(doc.filePath);
-      if (await file.exists()) {
-        try {
+      try {
+        final file = File(doc.filePath);
+        if (await file.exists()) {
           await file.delete();
-        } catch (e) {
-          // Continue even if file deletion fails
         }
+      } catch (e) {
+        // Continue even if file deletion fails
       }
     }
 

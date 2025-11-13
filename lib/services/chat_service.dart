@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatService {
-  static const String _storageKey = 'tmed_chat_messages';
+  static const String _storageKey = 'klinate_chat_messages';
   static final Map<String, List<ChatMessage>> _chatRooms = {};
   static final Map<String, StreamController<List<ChatMessage>>>
   _streamControllers = {};

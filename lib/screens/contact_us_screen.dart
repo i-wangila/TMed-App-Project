@@ -60,7 +60,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         _buildContactItem(
           Icons.email,
           'Email',
-          'support@tmed.com',
+          'support@klinate.com',
           'We reply within 24 hours',
         ),
         _buildContactItem(

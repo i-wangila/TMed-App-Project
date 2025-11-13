@@ -216,7 +216,7 @@ class _ProviderTypeSelectionScreenState
                     ),
                     child: const Icon(
                       Icons.check,
-                      size: 16,
+                      size: 18,
                       color: Colors.white,
                     ),
                   ),
@@ -377,7 +377,11 @@ class _ProviderTypeSelectionScreenState
               ),
               child: const Text(
                 'Continue',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

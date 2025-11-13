@@ -646,44 +646,42 @@ class _ProviderRegistrationScreenState
   }
 
   Widget _buildDocumentUploadCard(String documentType) {
-    // Find the document for this type
-    Document? document;
-    try {
-      document = _uploadedDocuments.firstWhere(
-        (doc) =>
-            doc.typeDisplayName.toLowerCase() == documentType.toLowerCase(),
-      );
-    } catch (e) {
-      document = null;
-    }
+    // Find all documents for this type
+    final documents = _uploadedDocuments
+        .where(
+          (doc) =>
+              doc.typeDisplayName.toLowerCase() == documentType.toLowerCase(),
+        )
+        .toList();
 
-    final isUploaded = document != null;
+    final hasDocuments = documents.isNotEmpty;
+    final approvedCount = documents
+        .where((doc) => doc.status == DocumentStatus.approved)
+        .length;
+    final pendingCount = documents
+        .where((doc) => doc.status == DocumentStatus.pending)
+        .length;
+    final rejectedCount = documents
+        .where((doc) => doc.status == DocumentStatus.rejected)
+        .length;
+
     Color statusColor = Colors.grey[600]!;
-    String statusText = 'Tap to upload';
+    String statusText = 'No documents uploaded';
     IconData statusIcon = Icons.upload_file;
 
-    if (isUploaded) {
-      switch (document.status) {
-        case DocumentStatus.approved:
-          statusColor = Colors.green[600]!;
-          statusText = 'Approved';
-          statusIcon = Icons.check_circle;
-          break;
-        case DocumentStatus.pending:
-          statusColor = Colors.orange[600]!;
-          statusText = 'Pending review';
-          statusIcon = Icons.pending;
-          break;
-        case DocumentStatus.rejected:
-          statusColor = Colors.red[600]!;
-          statusText = 'Rejected - needs update';
-          statusIcon = Icons.cancel;
-          break;
-        case DocumentStatus.expired:
-          statusColor = Colors.grey[600]!;
-          statusText = 'Expired - needs renewal';
-          statusIcon = Icons.schedule;
-          break;
+    if (hasDocuments) {
+      if (approvedCount > 0) {
+        statusColor = Colors.green[600]!;
+        statusText = '$approvedCount approved';
+        statusIcon = Icons.check_circle;
+      } else if (pendingCount > 0) {
+        statusColor = Colors.orange[600]!;
+        statusText = '$pendingCount pending review';
+        statusIcon = Icons.pending;
+      } else if (rejectedCount > 0) {
+        statusColor = Colors.red[600]!;
+        statusText = '$rejectedCount rejected';
+        statusIcon = Icons.cancel;
       }
     }
 
@@ -694,61 +692,160 @@ class _ProviderRegistrationScreenState
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isUploaded
+          color: hasDocuments
               ? statusColor.withValues(alpha: 0.3)
               : Colors.grey[300]!,
         ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      documentType,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasDocuments
+                          ? '$statusText (${documents.length} total)'
+                          : statusText,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: statusColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => _uploadDocument(documentType),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[100],
+                  foregroundColor: Colors.blue[800],
+                  elevation: 0,
+                ),
+                child: const Text('Add Document'),
+              ),
+            ],
+          ),
+          if (documents.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 8),
+            ...documents.map((doc) => _buildDocumentListItem(doc)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentListItem(Document document) {
+    Color statusColor = Colors.grey[600]!;
+    IconData statusIcon = Icons.pending;
+
+    switch (document.status) {
+      case DocumentStatus.approved:
+        statusColor = Colors.green[600]!;
+        statusIcon = Icons.check_circle;
+        break;
+      case DocumentStatus.pending:
+        statusColor = Colors.orange[600]!;
+        statusIcon = Icons.pending;
+        break;
+      case DocumentStatus.rejected:
+        statusColor = Colors.red[600]!;
+        statusIcon = Icons.cancel;
+        break;
+      case DocumentStatus.expired:
+        statusColor = Colors.grey[600]!;
+        statusIcon = Icons.schedule;
+        break;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         children: [
-          Icon(statusIcon, color: statusColor, size: 32),
-          const SizedBox(width: 16),
+          Icon(statusIcon, color: statusColor, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  documentType,
+                  document.fileName,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  statusText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: statusColor,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (isUploaded && document.fileName.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    document.fileName,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                const SizedBox(height: 2),
+                Text(
+                  '${document.statusText} • ${document.fileSizeFormatted}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
               ],
             ),
           ),
-          ElevatedButton(
-            onPressed: () => _uploadDocument(documentType),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isUploaded
-                  ? statusColor.withValues(alpha: 0.1)
-                  : Colors.blue[100],
-              foregroundColor: isUploaded ? statusColor : Colors.blue[800],
-              elevation: 0,
-            ),
-            child: Text(isUploaded ? 'Update' : 'Upload'),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 20),
+            color: Colors.red[400],
+            onPressed: () => _deleteDocument(document.id),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _deleteDocument(String documentId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Document'),
+        content: const Text('Are you sure you want to delete this document?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await DocumentService.deleteDocument(documentId);
+      if (success) {
+        await _loadUploadedDocuments();
+        _showSnackBar('Document deleted successfully');
+      } else {
+        _showSnackBar('Failed to delete document');
+      }
+    }
   }
 
   Widget _buildReviewSection(String title, List<String> items) {
@@ -839,6 +936,7 @@ class _ProviderRegistrationScreenState
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
                     ),
             ),
@@ -872,17 +970,22 @@ class _ProviderRegistrationScreenState
           }
           break;
         case 2:
-          // Check if all required documents are uploaded and approved
-          final requiredDocs = widget.providerType.requirements.length;
-          final approvedDocs = _uploadedDocuments
-              .where((doc) => doc.status == DocumentStatus.approved)
-              .length;
+          // Check if at least one document is uploaded for each required type
+          final requiredTypes = widget.providerType.requirements;
+          final missingTypes = <String>[];
+          
+          for (final requiredType in requiredTypes) {
+            final hasDocument = _uploadedDocuments.any(
+              (doc) => doc.typeDisplayName.toLowerCase() == requiredType.toLowerCase(),
+            );
+            if (!hasDocument) {
+              missingTypes.add(requiredType);
+            }
+          }
 
-          isValid = _uploadedDocuments.length >= requiredDocs;
+          isValid = missingTypes.isEmpty;
           if (!isValid) {
-            _showSnackBar('Please upload all required documents');
-          } else if (approvedDocs < requiredDocs) {
-            _showSnackBar('Some documents are still pending approval');
+            _showSnackBar('Please upload at least one document for: ${missingTypes.join(", ")}');
           }
           break;
       }
@@ -1065,7 +1168,7 @@ class _ProviderRegistrationScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              'Your application to become a ${widget.providerType.name} has been submitted successfully. You are now listed in the TMed network and can start receiving appointment requests!',
+              'Your application to become a ${widget.providerType.name} has been submitted successfully. You are now listed in the Klinate network and can start receiving appointment requests!',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -1090,7 +1193,11 @@ class _ProviderRegistrationScreenState
                 ),
                 child: const Text(
                   'Back to Home',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),

@@ -726,7 +726,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildMenuItem(
             icon: Icons.info_outline,
             title: 'About',
-            subtitle: 'Learn more about TMed and our mission',
+            subtitle: 'Learn more about Klinate and our mission',
             onTap: () {
               Navigator.push(
                 context,
@@ -856,7 +856,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'TMed',
+                      'Klinate',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -931,7 +931,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icon(Icons.copyright, size: 16, color: Colors.grey[600]),
                   const SizedBox(width: 6),
                   Text(
-                    '© 2025 TMed. All rights reserved.',
+                    '© 2025 Klinate. All rights reserved.',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,

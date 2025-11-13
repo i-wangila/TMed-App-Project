@@ -324,7 +324,11 @@ class _RateProviderScreenState extends State<RateProviderScreen> {
                   )
                 : const Text(
                     'Submit Review',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
           ),
         ),
