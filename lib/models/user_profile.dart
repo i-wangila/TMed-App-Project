@@ -1,22 +1,90 @@
-enum UserType { patient, provider }
+enum UserRole {
+  patient,
+  doctor,
+  nurse,
+  therapist,
+  nutritionist,
+  homecare,
+  hospital,
+  clinic,
+  pharmacy,
+  laboratory,
+  dental,
+  wellness,
+  admin,
+}
+
+extension UserRoleExtension on UserRole {
+  String get displayName {
+    switch (this) {
+      case UserRole.patient:
+        return 'Patient';
+      case UserRole.doctor:
+        return 'Doctor';
+      case UserRole.nurse:
+        return 'Nurse';
+      case UserRole.therapist:
+        return 'Therapist';
+      case UserRole.nutritionist:
+        return 'Nutritionist';
+      case UserRole.homecare:
+        return 'Home Care Provider';
+      case UserRole.hospital:
+        return 'Hospital';
+      case UserRole.clinic:
+        return 'Clinic';
+      case UserRole.pharmacy:
+        return 'Pharmacy';
+      case UserRole.laboratory:
+        return 'Laboratory';
+      case UserRole.dental:
+        return 'Dental Clinic';
+      case UserRole.wellness:
+        return 'Wellness Center';
+      case UserRole.admin:
+        return 'Administrator';
+    }
+  }
+
+  bool get isProvider {
+    return this != UserRole.patient && this != UserRole.admin;
+  }
+
+  bool get isAdmin {
+    return this == UserRole.admin;
+  }
+
+  bool get isInstitution {
+    return this == UserRole.hospital ||
+        this == UserRole.clinic ||
+        this == UserRole.pharmacy ||
+        this == UserRole.laboratory ||
+        this == UserRole.dental ||
+        this == UserRole.wellness;
+  }
+
+  bool get isIndividual {
+    return isProvider && !isInstitution;
+  }
+}
 
 class UserProfile {
+  final String id;
   String name;
   String email;
   String phone;
-  String? password; // For authentication
+  String? password;
   String? profilePicturePath;
-  UserType userType;
-  String? specialization; // For providers
-  String? licenseNumber; // For providers
+  List<UserRole> roles; // Multiple roles support
+  UserRole currentRole; // Active role
   bool isOnline;
   String dateOfBirth;
   String gender;
   String address;
   String emergencyContact;
   String bloodType;
-  String? weight; // in kg
-  String? height; // in cm
+  String? weight;
+  String? height;
   List<String> allergies;
   List<String> medications;
   List<String> medicalConditions;
@@ -24,14 +92,14 @@ class UserProfile {
   DateTime updatedAt;
 
   UserProfile({
+    String? id,
     required this.name,
     required this.email,
     required this.phone,
     this.password,
     this.profilePicturePath,
-    this.userType = UserType.patient,
-    this.specialization,
-    this.licenseNumber,
+    List<UserRole>? roles,
+    UserRole? currentRole,
     this.isOnline = false,
     this.dateOfBirth = '',
     this.gender = '',
@@ -45,20 +113,35 @@ class UserProfile {
     this.medicalConditions = const [],
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) : createdAt = createdAt ?? DateTime.now(),
+  }) : id = id ?? 'user_${DateTime.now().millisecondsSinceEpoch}',
+       roles = roles ?? [UserRole.patient],
+       currentRole = currentRole ?? UserRole.patient,
+       createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
 
-  // Convert to JSON for storage
+  bool hasRole(UserRole role) => roles.contains(role);
+
+  bool get isPatient => currentRole == UserRole.patient;
+  bool get isProvider => currentRole.isProvider;
+  bool get isAdmin => currentRole.isAdmin;
+  bool get isInstitution => currentRole.isInstitution;
+  bool get isIndividual => currentRole.isIndividual;
+
+  bool get hasMultipleRoles => roles.length > 1;
+
+  List<UserRole> get providerRoles =>
+      roles.where((role) => role.isProvider).toList();
+
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'email': email,
       'phone': phone,
       'password': password,
       'profilePicturePath': profilePicturePath,
-      'userType': userType.toString(),
-      'specialization': specialization,
-      'licenseNumber': licenseNumber,
+      'roles': roles.map((r) => r.toString()).toList(),
+      'currentRole': currentRole.toString(),
       'isOnline': isOnline,
       'dateOfBirth': dateOfBirth,
       'gender': gender,
@@ -75,20 +158,28 @@ class UserProfile {
     };
   }
 
-  // Create from JSON
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
+      id: json['id'],
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
       password: json['password'],
       profilePicturePath: json['profilePicturePath'],
-      userType: UserType.values.firstWhere(
-        (e) => e.toString() == json['userType'],
-        orElse: () => UserType.patient,
+      roles:
+          (json['roles'] as List?)
+              ?.map(
+                (r) => UserRole.values.firstWhere(
+                  (e) => e.toString() == r,
+                  orElse: () => UserRole.patient,
+                ),
+              )
+              .toList() ??
+          [UserRole.patient],
+      currentRole: UserRole.values.firstWhere(
+        (e) => e.toString() == json['currentRole'],
+        orElse: () => UserRole.patient,
       ),
-      specialization: json['specialization'],
-      licenseNumber: json['licenseNumber'],
       isOnline: json['isOnline'] ?? false,
       dateOfBirth: json['dateOfBirth'] ?? '',
       gender: json['gender'] ?? '',
@@ -109,16 +200,15 @@ class UserProfile {
     );
   }
 
-  // Copy with method for updates
   UserProfile copyWith({
+    String? id,
     String? name,
     String? email,
     String? phone,
     String? password,
     String? profilePicturePath,
-    UserType? userType,
-    String? specialization,
-    String? licenseNumber,
+    List<UserRole>? roles,
+    UserRole? currentRole,
     bool? isOnline,
     String? dateOfBirth,
     String? gender,
@@ -132,14 +222,14 @@ class UserProfile {
     List<String>? medicalConditions,
   }) {
     return UserProfile(
+      id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       password: password ?? this.password,
       profilePicturePath: profilePicturePath ?? this.profilePicturePath,
-      userType: userType ?? this.userType,
-      specialization: specialization ?? this.specialization,
-      licenseNumber: licenseNumber ?? this.licenseNumber,
+      roles: roles ?? this.roles,
+      currentRole: currentRole ?? this.currentRole,
       isOnline: isOnline ?? this.isOnline,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,

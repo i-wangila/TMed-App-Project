@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
+import 'screens/admin_setup_screen.dart';
+import 'screens/pending_providers_screen.dart';
+import 'screens/user_management_screen.dart';
+import 'screens/activity_log_screen.dart';
+import 'screens/reports_screen.dart';
+import 'screens/admin_management_screen.dart';
+import 'screens/provider_dashboard_screen.dart';
 import 'services/user_service.dart';
 import 'services/message_service.dart';
 import 'services/wallet_service.dart';
+import 'services/admin_service.dart';
+import 'services/audit_service.dart';
+import 'middleware/auth_guard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await UserService.initialize();
   await MessageService.loadMessages();
   await WalletService.initialize();
+  await AdminService.initialize();
+  await AuditService.initialize();
   runApp(const KlinateApp());
 }
 
@@ -20,6 +33,55 @@ class KlinateApp extends StatelessWidget {
     return MaterialApp(
       title: 'Klinate',
       debugShowCheckedModeBanner: false,
+      onGenerateRoute: (settings) {
+        // Check authentication for admin routes
+        if (settings.name?.startsWith('/admin/') == true &&
+            settings.name != '/admin/setup') {
+          if (!AuthGuard.isAdmin()) {
+            return MaterialPageRoute(
+              builder: (context) => const _AdminGuardScreen(),
+            );
+          }
+        }
+
+        // Route mapping
+        switch (settings.name) {
+          case '/admin/dashboard':
+            return MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            );
+          case '/admin/setup':
+            return MaterialPageRoute(
+              builder: (context) => const AdminSetupScreen(),
+            );
+          case '/admin/pending-providers':
+            return MaterialPageRoute(
+              builder: (context) => const PendingProvidersScreen(),
+            );
+          case '/admin/user-management':
+            return MaterialPageRoute(
+              builder: (context) => const UserManagementScreen(),
+            );
+          case '/admin/activity-log':
+            return MaterialPageRoute(
+              builder: (context) => const ActivityLogScreen(),
+            );
+          case '/admin/reports':
+            return MaterialPageRoute(
+              builder: (context) => const ReportsScreen(),
+            );
+          case '/admin/admin-management':
+            return MaterialPageRoute(
+              builder: (context) => const AdminManagementScreen(),
+            );
+          case '/provider-dashboard':
+            return MaterialPageRoute(
+              builder: (context) => const ProviderDashboardScreen(),
+            );
+          default:
+            return null;
+        }
+      },
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E86AB)),
         useMaterial3: true,
@@ -51,5 +113,29 @@ class KlinateApp extends StatelessWidget {
       ),
       home: const OnboardingScreen(),
     );
+  }
+}
+
+class _AdminGuardScreen extends StatefulWidget {
+  const _AdminGuardScreen();
+
+  @override
+  State<_AdminGuardScreen> createState() => _AdminGuardScreenState();
+}
+
+class _AdminGuardScreenState extends State<_AdminGuardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        AuthGuard.requireAdmin(context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

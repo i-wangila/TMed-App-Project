@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import '../utils/responsive_utils.dart';
-import 'manage_account_screen.dart';
+import 'manage_my_accounts_screen.dart';
 import '../services/notification_preferences_service.dart';
+import '../services/admin_service.dart';
+import 'admin_setup_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,17 +38,37 @@ class SettingsScreen extends StatelessWidget {
           _buildSettingsItem(
             context,
             icon: Icons.manage_accounts,
-            title: 'Manage Account',
-            subtitle: 'Update your profile and account settings',
+            title: 'Manage My Accounts',
+            subtitle: 'View and manage all your account types',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ManageAccountScreen(),
+                  builder: (context) => const ManageMyAccountsScreen(),
                 ),
               );
             },
           ),
+          if (!AdminService.hasAdmin())
+            _buildSettingsItem(
+              context,
+              icon: Icons.admin_panel_settings,
+              title: 'Become Admin',
+              subtitle: 'Set up admin account for system management',
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminSetupScreen(),
+                  ),
+                );
+                // Refresh the screen when returning
+                if (mounted) {
+                  setState(() {});
+                }
+              },
+              isHighlighted: true,
+            ),
           _buildSettingsItem(
             context,
             icon: Icons.notifications,
@@ -74,6 +101,7 @@ class SettingsScreen extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
     bool isDestructive = false,
+    bool isHighlighted = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -85,10 +113,14 @@ class SettingsScreen extends StatelessWidget {
           bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isHighlighted ? Colors.blue[50] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDestructive ? Colors.red[200]! : Colors.grey[200]!,
+            color: isDestructive
+                ? Colors.red[200]!
+                : isHighlighted
+                ? Colors.blue[300]!
+                : Colors.grey[200]!,
             width: 1,
           ),
         ),
@@ -97,12 +129,20 @@ class SettingsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDestructive ? Colors.red[50] : Colors.grey[100],
+                color: isDestructive
+                    ? Colors.red[50]
+                    : isHighlighted
+                    ? Colors.blue[100]
+                    : Colors.grey[100],
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: isDestructive ? Colors.red[700] : Colors.grey[700],
+                color: isDestructive
+                    ? Colors.red[700]
+                    : isHighlighted
+                    ? Colors.blue[700]
+                    : Colors.grey[700],
                 size: 24,
               ),
             ),
@@ -119,7 +159,11 @@ class SettingsScreen extends StatelessWidget {
                         16,
                       ),
                       fontWeight: FontWeight.w600,
-                      color: isDestructive ? Colors.red[700] : Colors.black,
+                      color: isDestructive
+                          ? Colors.red[700]
+                          : isHighlighted
+                          ? Colors.blue[900]
+                          : Colors.black,
                     ),
                   ),
                   SizedBox(

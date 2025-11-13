@@ -595,10 +595,9 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       } else {
         // Sign Up
-        final fullName =
-            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
         final result = await UserService.signUp(
-          name: fullName,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
           phone: _emailController.text
               .trim(), // Using email field for phone/email

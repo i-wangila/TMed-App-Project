@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/provider_type.dart';
 import '../models/document.dart';
+import '../models/user_profile.dart';
+import '../models/provider_profile.dart';
 import '../services/healthcare_provider_service.dart';
 import '../services/healthcare_facility_service.dart';
 import '../services/document_service.dart';
 import '../services/user_service.dart';
+import '../services/provider_service.dart';
 import 'document_upload_screen.dart';
 
 class ProviderRegistrationScreen extends StatefulWidget {
@@ -17,8 +20,8 @@ class ProviderRegistrationScreen extends StatefulWidget {
       _ProviderRegistrationScreenState();
 }
 
-class _ProviderRegistrationScreenState
-    extends State<ProviderRegistrationScreen> {
+class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentStep = 0;
   final int _totalSteps = 4;
@@ -50,7 +53,16 @@ class _ProviderRegistrationScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeDocumentService();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reload documents when app resumes
+      _loadUploadedDocuments();
+    }
   }
 
   Future<void> _initializeDocumentService() async {
@@ -60,10 +72,12 @@ class _ProviderRegistrationScreenState
 
   Future<void> _loadUploadedDocuments() async {
     final documents = DocumentService.getAllDocuments();
-    setState(() {
-      _uploadedDocuments.clear();
-      _uploadedDocuments.addAll(documents);
-    });
+    if (mounted) {
+      setState(() {
+        _uploadedDocuments.clear();
+        _uploadedDocuments.addAll(documents);
+      });
+    }
   }
 
   @override
@@ -973,10 +987,12 @@ class _ProviderRegistrationScreenState
           // Check if at least one document is uploaded for each required type
           final requiredTypes = widget.providerType.requirements;
           final missingTypes = <String>[];
-          
+
           for (final requiredType in requiredTypes) {
             final hasDocument = _uploadedDocuments.any(
-              (doc) => doc.typeDisplayName.toLowerCase() == requiredType.toLowerCase(),
+              (doc) =>
+                  doc.typeDisplayName.toLowerCase() ==
+                  requiredType.toLowerCase(),
             );
             if (!hasDocument) {
               missingTypes.add(requiredType);
@@ -985,7 +1001,9 @@ class _ProviderRegistrationScreenState
 
           isValid = missingTypes.isEmpty;
           if (!isValid) {
-            _showSnackBar('Please upload at least one document for: ${missingTypes.join(", ")}');
+            _showSnackBar(
+              'Please upload at least one document for: ${missingTypes.join(", ")}',
+            );
           }
           break;
       }
@@ -1057,9 +1075,42 @@ class _ProviderRegistrationScreenState
     });
 
     try {
-      // Create provider/facility based on category
+      final currentUser = UserService.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Map provider type ID to UserRole
+      UserRole providerRole = _mapProviderTypeToRole(widget.providerType.id);
+
+      // Create ProviderProfile
+      final providerProfile = ProviderProfile(
+        userId: currentUser.id,
+        providerType: providerRole,
+        status: ProviderStatus.pending, // Pending verification
+        specialization: _specializationController.text.trim(),
+        servicesOffered: _selectedServices,
+        experienceYears: int.tryParse(_experienceController.text),
+        bio: _bioController.text.trim(),
+        languages: _selectedLanguages,
+        consultationFee: double.tryParse(_consultationFeeController.text),
+        workingDays: _workingDays,
+        verificationDocuments: _uploadedDocuments.map((d) => d.id).toList(),
+      );
+
+      // Save provider profile
+      final savedProfile = await ProviderService.createProvider(
+        providerProfile,
+      );
+      if (savedProfile == null) {
+        throw Exception('Failed to create provider profile');
+      }
+
+      // Add provider role to user
+      await UserService.addRole(providerRole);
+
+      // Also create in old services for backward compatibility
       if (widget.providerType.category == ProviderCategory.individual) {
-        // Create individual healthcare provider
         final newProvider =
             HealthcareProviderService.createProviderFromRegistration(
               name: _nameController.text,
@@ -1076,21 +1127,11 @@ class _ProviderRegistrationScreenState
               workingDays: _workingDays,
               providerType: widget.providerType.name,
               profileImagePath:
-                  UserService.currentUser?.profilePicturePath ??
+                  currentUser.profilePicturePath ??
                   'https://via.placeholder.com/200',
             );
-
-        // Add to provider service
-        final success = await HealthcareProviderService.addNewProvider(
-          newProvider,
-        );
-        if (!success) {
-          throw Exception(
-            'Failed to register provider - email may already exist',
-          );
-        }
+        await HealthcareProviderService.addNewProvider(newProvider);
       } else {
-        // Create healthcare facility
         final newFacility =
             HealthcareFacilityService.createFacilityFromRegistration(
               name: _nameController.text,
@@ -1103,25 +1144,19 @@ class _ProviderRegistrationScreenState
               workingDays: _workingDays,
               facilityTypeId: widget.providerType.id,
               profileImagePath:
-                  UserService.currentUser?.profilePicturePath ??
+                  currentUser.profilePicturePath ??
                   'https://via.placeholder.com/200',
             );
-
-        // Add to facility service
-        final success = await HealthcareFacilityService.addNewFacility(
-          newFacility,
-        );
-        if (!success) {
-          throw Exception(
-            'Failed to register facility - email may already exist',
-          );
-        }
+        await HealthcareFacilityService.addNewFacility(newFacility);
       }
 
-      // Simulate additional processing time
+      // Simulate processing time
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         _showSuccessDialog();
       }
     } catch (e) {
@@ -1131,6 +1166,35 @@ class _ProviderRegistrationScreenState
         });
         _showSnackBar('Registration failed: ${e.toString()}');
       }
+    }
+  }
+
+  UserRole _mapProviderTypeToRole(String providerTypeId) {
+    switch (providerTypeId) {
+      case 'doctor':
+        return UserRole.doctor;
+      case 'nurse':
+        return UserRole.nurse;
+      case 'therapist':
+        return UserRole.therapist;
+      case 'nutritionist':
+        return UserRole.nutritionist;
+      case 'home_care':
+        return UserRole.homecare;
+      case 'hospital':
+        return UserRole.hospital;
+      case 'clinic':
+        return UserRole.clinic;
+      case 'pharmacy':
+        return UserRole.pharmacy;
+      case 'laboratory':
+        return UserRole.laboratory;
+      case 'dental':
+        return UserRole.dental;
+      case 'wellness':
+        return UserRole.wellness;
+      default:
+        return UserRole.doctor;
     }
   }
 
@@ -1168,7 +1232,7 @@ class _ProviderRegistrationScreenState
             ),
             const SizedBox(height: 16),
             Text(
-              'Your application to become a ${widget.providerType.name} has been submitted successfully. You are now listed in the Klinate network and can start receiving appointment requests!',
+              'Your application to become a ${widget.providerType.name} has been submitted successfully! Your application is now pending admin approval. You will be notified once approved.',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -1181,7 +1245,9 @@ class _ProviderRegistrationScreenState
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  // Close dialog and navigate back to home
+                  Navigator.of(context).pop(); // Close dialog
+                  Navigator.of(context).pop(); // Close registration screen
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
@@ -1192,7 +1258,7 @@ class _ProviderRegistrationScreenState
                   ),
                 ),
                 child: const Text(
-                  'Back to Home',
+                  'OK',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1315,6 +1381,7 @@ class _ProviderRegistrationScreenState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     _nameController.dispose();
     _emailController.dispose();

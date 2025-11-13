@@ -7,9 +7,11 @@ import '../utils/responsive_utils.dart';
 import '../services/user_service.dart';
 import 'provider_profile_screen.dart';
 import 'facility_profile_screen.dart';
-import '../services/healthcare_provider_service.dart';
+import '../services/provider_service.dart';
 import '../services/healthcare_facility_service.dart';
 import '../services/message_service.dart';
+import '../models/provider_profile.dart';
+import '../models/user_profile.dart';
 import '../models/healthcare_facility.dart';
 import 'wallet_screen.dart';
 import 'document_management_screen.dart';
@@ -87,15 +89,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     }
 
-    // Search providers
-    final providers = HealthcareProviderService.getAllProviders();
+    // Search providers - only show approved providers
+    final providers = ProviderService.getApprovedProviders();
     for (var provider in providers) {
-      if (provider.name.toLowerCase().contains(lowerQuery) ||
-          provider.specialization.toLowerCase().contains(lowerQuery)) {
+      final providerName = ProviderService.getProviderDisplayName(provider.id);
+      final specialization = provider.specialization ?? '';
+
+      if (providerName.toLowerCase().contains(lowerQuery) ||
+          specialization.toLowerCase().contains(lowerQuery)) {
         results.add({
           'type': 'provider',
-          'name': provider.name,
-          'subtitle': provider.specialization,
+          'name': providerName,
+          'subtitle': specialization,
           'rating': provider.rating.toStringAsFixed(2),
           'data': provider,
         });
@@ -479,6 +484,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildProfileMenuList() {
+    final user = UserService.currentUser;
+    final isAdmin = user != null && user.hasRole(UserRole.admin);
+
     return Column(
       children: [
         _buildProfileMenuItem(
@@ -491,6 +499,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             });
           },
         ),
+        if (isAdmin)
+          _buildProfileMenuItem(
+            icon: Icons.admin_panel_settings,
+            title: 'Admin Dashboard',
+            onTap: () {
+              Navigator.pushNamed(context, '/admin/dashboard');
+            },
+            isHighlighted: true,
+          ),
         _buildProfileMenuItem(
           icon: Icons.account_balance_wallet,
           title: 'Wallet',
@@ -599,6 +616,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     required String title,
     required VoidCallback onTap,
     bool isLogout = false,
+    bool isHighlighted = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -608,6 +626,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           vertical: ResponsiveUtils.getResponsiveSpacing(context, 16),
         ),
         decoration: BoxDecoration(
+          color: isHighlighted ? Colors.blue[50] : Colors.white,
           border: Border(
             bottom: BorderSide(color: Colors.grey[200]!, width: 1),
           ),
@@ -616,7 +635,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             Icon(
               icon,
-              color: isLogout ? Colors.red : Colors.black,
+              color: isLogout
+                  ? Colors.red
+                  : isHighlighted
+                  ? Colors.blue[700]
+                  : Colors.black,
               size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
             ),
             SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 16)),
@@ -625,7 +648,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 title,
                 style: TextStyle(
                   fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
-                  color: isLogout ? Colors.red : Colors.black,
+                  color: isLogout
+                      ? Colors.red
+                      : isHighlighted
+                      ? Colors.blue[900]
+                      : Colors.black,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -929,20 +956,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _navigateToProviderProfile(String title, String category) {
     if (category.contains('Doctors')) {
       String providerName = title;
-      final providers = HealthcareProviderService.getAllProviders();
-      final provider = providers.firstWhere(
-        (p) => p.name.toLowerCase().contains(
-          providerName.toLowerCase().split(' - ')[0],
-        ),
-        orElse: () => providers.first,
-      );
+      // Use new ProviderService - only approved providers
+      final providers = ProviderService.getApprovedProviders();
+      final providerDisplayName = providerName.toLowerCase().split(' - ')[0];
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProviderProfileScreen(providerId: provider.id),
-        ),
-      );
+      // Find provider by matching display name
+      ProviderProfile? provider;
+      for (var p in providers) {
+        final displayName = ProviderService.getProviderDisplayName(p.id);
+        if (displayName.toLowerCase().contains(providerDisplayName)) {
+          provider = p;
+          break;
+        }
+      }
+
+      if (provider != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                ProviderProfileScreen(providerId: provider!.id),
+          ),
+        );
+      }
     } else {
       final facility = HealthcareFacilityService.getFacilityByName(title);
       if (facility != null) {
@@ -968,7 +1004,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildProvidersSection() {
-    final providers = HealthcareProviderService.getAllProviders();
+    // Use new ProviderService - only show approved providers
+    final providers = ProviderService.getApprovedProviders();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1001,9 +1038,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   providers
                       .map(
                         (p) => {
-                          'title': '${p.name} - ${p.specialization}',
+                          'title':
+                              '${ProviderService.getProviderDisplayName(p.id)} - ${p.specialization}',
                           'rating': p.rating.toStringAsFixed(1),
-                          'location': p.location,
+                          'location': p.premises?.city ?? '',
                         },
                       )
                       .toList(),
@@ -1046,8 +1084,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildProviderCard(provider) {
+    final providerName = ProviderService.getProviderDisplayName(provider.id);
     return GestureDetector(
-      onTap: () => _navigateToProviderProfile(provider.name, 'Doctors'),
+      onTap: () => _navigateToProviderProfile(providerName, 'Doctors'),
       child: Container(
         width: 160,
         margin: EdgeInsets.only(
@@ -1071,7 +1110,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 6)),
             ResponsiveUtils.safeText(
-              provider.name,
+              providerName,
               style: TextStyle(
                 fontSize: ResponsiveUtils.getResponsiveFontSize(context, 15),
                 fontWeight: FontWeight.w600,
@@ -1123,13 +1162,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildProviderImage(provider) {
-    if (provider.profileImageUrl != null &&
-        provider.profileImageUrl != 'https://via.placeholder.com/200' &&
-        provider.profileImageUrl!.startsWith('/')) {
+    // Get user profile to access profile picture
+    final users = UserService.getAllUsers();
+    final user = users.firstWhere(
+      (u) => u.id == provider.userId,
+      orElse: () => UserProfile(
+        id: provider.userId,
+        name: 'Provider',
+        email: '',
+        phone: '',
+      ),
+    );
+
+    final profileImagePath = user.profilePicturePath;
+
+    if (profileImagePath != null &&
+        profileImagePath.isNotEmpty &&
+        profileImagePath != 'https://via.placeholder.com/200' &&
+        profileImagePath.startsWith('/')) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.file(
-          File(provider.profileImageUrl!),
+          File(profileImagePath),
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,
@@ -1138,12 +1192,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           },
         ),
       );
-    } else if (provider.profileImageUrl != null &&
-        provider.profileImageUrl != 'https://via.placeholder.com/200') {
+    } else if (profileImagePath != null &&
+        profileImagePath.isNotEmpty &&
+        profileImagePath != 'https://via.placeholder.com/200') {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.network(
-          provider.profileImageUrl!,
+          profileImagePath,
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,
@@ -1158,12 +1213,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildDefaultProviderAvatar(provider) {
+    final providerName = ProviderService.getProviderDisplayName(provider.id);
     return Center(
       child: CircleAvatar(
         radius: 30,
         backgroundColor: Colors.blue[100],
         child: Text(
-          provider.name.split(' ').map((e) => e[0]).take(2).join(),
+          providerName.split(' ').map((e) => e[0]).take(2).join(),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,

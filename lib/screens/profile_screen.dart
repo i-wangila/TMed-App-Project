@@ -13,9 +13,9 @@ import 'about_screen.dart';
 import 'document_management_screen.dart';
 import '../utils/responsive_utils.dart';
 import '../services/user_service.dart';
+import '../services/admin_service.dart';
 import '../services/healthcare_provider_service.dart';
 import '../services/healthcare_facility_service.dart';
-import '../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -752,6 +752,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
           ),
+          // Admin Setup - Always show for testing, will hide after becoming admin
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.admin_panel_settings,
+            title: 'Admin Setup',
+            subtitle: 'Become an administrator',
+            onTap: () async {
+              await Navigator.pushNamed(context, '/admin/setup');
+              // Refresh to hide the button after becoming admin
+              if (mounted) {
+                setState(() {});
+              }
+            },
+          ),
           _buildDivider(),
           _buildAppInfoCard(),
         ],
@@ -1154,12 +1168,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isHealthcareProvider() {
     final user = UserService.currentUser;
-    return user?.userType == UserType.provider;
+    return user?.isProvider ?? false;
   }
 
   void _editProviderProfile() async {
     final user = UserService.currentUser;
-    if (user == null || user.userType != UserType.provider) {
+    if (user == null || !user.isProvider) {
       _showSnackBar('Only healthcare providers can edit provider profiles');
       return;
     }
