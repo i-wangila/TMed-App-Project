@@ -95,9 +95,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
         // Filter by county if selected
         if (_selectedCounty != null && _selectedCounty != 'All Counties') {
           final itemLocation = item['location']?.toLowerCase() ?? '';
-          final matchesCounty = itemLocation.contains(
-            _selectedCounty!.toLowerCase(),
-          );
+          // Match exact county name or if county appears in the location string
+          final selectedCountyLower = _selectedCounty!.toLowerCase();
+          final matchesCounty =
+              itemLocation == selectedCountyLower ||
+              itemLocation.contains(selectedCountyLower);
           return matchesSearch && matchesCounty;
         }
 

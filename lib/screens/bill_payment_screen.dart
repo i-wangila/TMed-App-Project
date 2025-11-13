@@ -25,31 +25,31 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
     'consultation': {
       'name': 'Consultation Fee',
       'icon': Icons.medical_services,
-      'color': Colors.blue,
+      'color': Colors.grey[700],
       'description': 'Pay for doctor consultation',
     },
     'pharmacy': {
       'name': 'Pharmacy Bill',
       'icon': Icons.local_pharmacy,
-      'color': Colors.green,
+      'color': Colors.grey[700],
       'description': 'Pay for medications',
     },
     'laboratory': {
       'name': 'Laboratory Tests',
       'icon': Icons.science,
-      'color': Colors.purple,
+      'color': Colors.grey[700],
       'description': 'Pay for lab tests and diagnostics',
     },
     'hospital': {
       'name': 'Hospital Bill',
       'icon': Icons.local_hospital,
-      'color': Colors.red,
+      'color': Colors.grey[700],
       'description': 'Pay hospital admission or treatment bills',
     },
     'imaging': {
       'name': 'Imaging Services',
       'icon': Icons.camera_alt,
-      'color': Colors.orange,
+      'color': Colors.grey[700],
       'description': 'Pay for X-ray, CT scan, MRI, etc.',
     },
   };
@@ -121,11 +121,8 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
         ResponsiveUtils.getResponsiveSpacing(context, 16),
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[700]!, Colors.blue[500]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey[300]!),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -133,12 +130,12 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_balance_wallet,
-              color: Colors.white,
+              color: Colors.grey[700],
               size: 28,
             ),
           ),
@@ -147,9 +144,9 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Available Balance',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -157,7 +154,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -189,12 +186,10 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? billType['color'].withOpacity(0.1)
-                  : Colors.grey[50],
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? billType['color'] : Colors.grey[300]!,
+                color: isSelected ? Colors.black : Colors.grey[300]!,
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -203,7 +198,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
               children: [
                 Icon(
                   billType['icon'],
-                  color: isSelected ? billType['color'] : Colors.grey[600],
+                  color: isSelected ? Colors.black : Colors.grey[600],
                   size: 32,
                 ),
                 const SizedBox(height: 8),
@@ -215,7 +210,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
-                    color: isSelected ? billType['color'] : Colors.black,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -237,7 +232,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
       decoration: InputDecoration(
         labelText: 'Till Number / Paybill',
         hintText: 'Enter provider till number',
-        prefixIcon: const Icon(Icons.numbers, color: Colors.blue),
+        prefixIcon: Icon(Icons.numbers, color: Colors.grey[700]),
         filled: true,
         fillColor: Colors.grey[50],
         border: OutlineInputBorder(
@@ -273,7 +268,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
       decoration: InputDecoration(
         labelText: 'Amount (KSh)',
         hintText: 'Enter amount to pay',
-        prefixIcon: const Icon(Icons.attach_money, color: Colors.green),
+        prefixIcon: Icon(Icons.attach_money, color: Colors.grey[700]),
         filled: true,
         fillColor: Colors.grey[50],
         border: OutlineInputBorder(
@@ -315,7 +310,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
       decoration: InputDecoration(
         labelText: 'Reference (Optional)',
         hintText: 'e.g., Invoice number, Patient ID',
-        prefixIcon: const Icon(Icons.receipt_long, color: Colors.orange),
+        prefixIcon: Icon(Icons.receipt_long, color: Colors.grey[700]),
         filled: true,
         fillColor: Colors.grey[50],
         border: OutlineInputBorder(
@@ -340,8 +335,9 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
       child: ElevatedButton(
         onPressed: _isProcessing ? null : _processBillPayment,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          side: BorderSide(color: Colors.grey[300]!),
           padding: EdgeInsets.symmetric(
             vertical: ResponsiveUtils.getResponsiveSpacing(context, 16),
           ),
@@ -351,11 +347,11 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
           elevation: 0,
         ),
         child: _isProcessing
-            ? const SizedBox(
+            ? SizedBox(
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: Colors.grey[700],
                   strokeWidth: 2,
                 ),
               )

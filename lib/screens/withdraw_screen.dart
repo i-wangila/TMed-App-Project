@@ -21,8 +21,6 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final wallet = WalletService.currentWallet;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Withdraw Funds'),
@@ -51,17 +49,18 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   Widget _buildCurrentBalance() {
     final wallet = WalletService.currentWallet;
     if (wallet == null) return const SizedBox.shrink();
+    final balance = wallet.balance;
 
     return Container(
       padding: ResponsiveUtils.getResponsivePadding(context),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[200]!),
+        border: Border.all(color: Colors.grey[300]!),
       ),
       child: Row(
         children: [
-          Icon(Icons.account_balance_wallet, color: Colors.orange[600]),
+          Icon(Icons.account_balance_wallet, color: Colors.grey[700]),
           SizedBox(width: ResponsiveUtils.getResponsiveSpacing(context, 12)),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,15 +69,15 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 'Available Balance',
                 style: TextStyle(
                   fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
-                  color: Colors.orange[700],
+                  color: Colors.grey[600],
                 ),
               ),
               Text(
-                WalletService.formatCurrency(wallet.balance),
+                WalletService.formatCurrency(balance),
                 style: TextStyle(
                   fontSize: ResponsiveUtils.getResponsiveFontSize(context, 18),
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange[800],
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -113,7 +112,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.orange, width: 2),
+              borderSide: const BorderSide(color: Colors.black, width: 2),
             ),
           ),
           validator: (value) {
@@ -244,19 +243,20 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       child: ElevatedButton(
         onPressed: _isProcessing ? null : _processWithdrawal,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          side: BorderSide(color: Colors.grey[300]!),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _isProcessing
-            ? const SizedBox(
+            ? SizedBox(
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[700]!),
                 ),
               )
             : Text(

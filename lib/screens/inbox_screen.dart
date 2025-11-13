@@ -328,6 +328,16 @@ class _InboxScreenState extends State<InboxScreen> {
         return Icons.calendar_today;
       case MessageType.prescription:
         return Icons.medication;
+      case MessageType.labResults:
+        return Icons.science;
+      case MessageType.medicalReport:
+        return Icons.description;
+      case MessageType.xrayReport:
+        return Icons.medical_information;
+      case MessageType.dischargeSummary:
+        return Icons.local_hospital;
+      case MessageType.vaccinationRecord:
+        return Icons.vaccines;
       case MessageType.system:
         return Icons.info;
       case MessageType.image:
@@ -342,17 +352,22 @@ class _InboxScreenState extends State<InboxScreen> {
   Color _getMessageTypeColor(MessageType type) {
     switch (type) {
       case MessageType.appointment:
-        return Colors.blue;
+        return Colors.grey[700]!;
       case MessageType.prescription:
-        return Colors.orange;
+      case MessageType.labResults:
+      case MessageType.medicalReport:
+      case MessageType.xrayReport:
+      case MessageType.dischargeSummary:
+      case MessageType.vaccinationRecord:
+        return Colors.grey[700]!;
       case MessageType.system:
-        return Colors.green;
+        return Colors.grey[700]!;
       case MessageType.image:
-        return Colors.purple;
+        return Colors.grey[700]!;
       case MessageType.file:
-        return Colors.brown;
+        return Colors.grey[700]!;
       default:
-        return Colors.grey;
+        return Colors.grey[700]!;
     }
   }
 

@@ -97,12 +97,12 @@ class SettingsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDestructive ? Colors.red[50] : Colors.blue[50],
+                color: isDestructive ? Colors.red[50] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: isDestructive ? Colors.red[700] : Colors.blue[700],
+                color: isDestructive ? Colors.red[700] : Colors.grey[700],
                 size: 24,
               ),
             ),
@@ -193,7 +193,7 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('Push Notifications'),
                     subtitle: const Text('Receive app notifications'),
                     value: pushNotifications,
-                    activeColor: Colors.blue,
+                    activeColor: Colors.grey[700],
                     onChanged: (value) {
                       setState(() => pushNotifications = value);
                     },
@@ -202,7 +202,7 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('Email Notifications'),
                     subtitle: const Text('Receive notifications via email'),
                     value: emailNotifications,
-                    activeColor: Colors.blue,
+                    activeColor: Colors.grey[700],
                     onChanged: (value) {
                       setState(() => emailNotifications = value);
                     },
@@ -211,7 +211,7 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('SMS Notifications'),
                     subtitle: const Text('Receive notifications via SMS'),
                     value: smsNotifications,
-                    activeColor: Colors.blue,
+                    activeColor: Colors.grey[700],
                     onChanged: (value) {
                       setState(() => smsNotifications = value);
                     },
@@ -243,8 +243,9 @@ class SettingsScreen extends StatelessWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        side: BorderSide(color: Colors.grey[300]!),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),

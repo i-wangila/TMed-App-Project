@@ -15,8 +15,11 @@ class UserProfile {
   String address;
   String emergencyContact;
   String bloodType;
+  String? weight; // in kg
+  String? height; // in cm
   List<String> allergies;
   List<String> medications;
+  List<String> medicalConditions;
   DateTime createdAt;
   DateTime updatedAt;
 
@@ -35,8 +38,11 @@ class UserProfile {
     this.address = '',
     this.emergencyContact = '',
     this.bloodType = '',
+    this.weight,
+    this.height,
     this.allergies = const [],
     this.medications = const [],
+    this.medicalConditions = const [],
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -59,8 +65,11 @@ class UserProfile {
       'address': address,
       'emergencyContact': emergencyContact,
       'bloodType': bloodType,
+      'weight': weight,
+      'height': height,
       'allergies': allergies,
       'medications': medications,
+      'medicalConditions': medicalConditions,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -86,8 +95,11 @@ class UserProfile {
       address: json['address'] ?? '',
       emergencyContact: json['emergencyContact'] ?? '',
       bloodType: json['bloodType'] ?? '',
+      weight: json['weight'],
+      height: json['height'],
       allergies: List<String>.from(json['allergies'] ?? []),
       medications: List<String>.from(json['medications'] ?? []),
+      medicalConditions: List<String>.from(json['medicalConditions'] ?? []),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),
@@ -113,8 +125,11 @@ class UserProfile {
     String? address,
     String? emergencyContact,
     String? bloodType,
+    String? weight,
+    String? height,
     List<String>? allergies,
     List<String>? medications,
+    List<String>? medicalConditions,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -131,8 +146,11 @@ class UserProfile {
       address: address ?? this.address,
       emergencyContact: emergencyContact ?? this.emergencyContact,
       bloodType: bloodType ?? this.bloodType,
+      weight: weight ?? this.weight,
+      height: height ?? this.height,
       allergies: allergies ?? this.allergies,
       medications: medications ?? this.medications,
+      medicalConditions: medicalConditions ?? this.medicalConditions,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );

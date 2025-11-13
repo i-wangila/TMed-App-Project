@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,8 +8,6 @@ import 'profile_edit_screen.dart';
 import 'edit_provider_profile_screen.dart';
 import 'edit_facility_profile_screen.dart';
 import 'wallet_screen.dart';
-import 'medical_records_screen.dart';
-import 'prescriptions_screen.dart';
 import 'settings_screen.dart';
 import 'about_screen.dart';
 import 'document_management_screen.dart';
@@ -142,6 +141,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.home, color: Colors.black),
+          onPressed: () {
+            // Navigate back to home screen
+            Navigator.of(context).pop();
+          },
+        ),
         title: const Text(
           'Profile',
           style: TextStyle(
@@ -218,32 +224,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: GestureDetector(
-                    onTap: _showImagePickerDialog,
-                    child: Container(
-                      padding: EdgeInsets.all(
-                        ResponsiveUtils.getResponsiveSpacing(context, 4),
-                      ),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Container(
-                        padding: EdgeInsets.all(
-                          ResponsiveUtils.getResponsiveSpacing(context, 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: ResponsiveUtils.isSmallScreen(context)
-                              ? 14
-                              : 16,
-                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        print('Camera icon clicked');
+                        _showImagePickerDialog();
+                      },
+                      icon: const Icon(Icons.camera_alt, color: Colors.black),
+                      iconSize: 20,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
                       ),
+                      tooltip: 'Change profile picture',
                     ),
                   ),
                 ),
@@ -309,6 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showImagePickerDialog() {
+    print('Camera icon tapped - showing image picker dialog');
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -369,6 +375,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildImageSourceOptions() {
+    // On web, only show gallery option (camera is not supported)
+    if (kIsWeb) {
+      return _buildSourceOption(
+        icon: Icons.photo_library,
+        label: 'Choose from Files',
+        onTap: () => _pickImage(ImageSource.gallery),
+      );
+    }
+
+    // On mobile, show both camera and gallery
     return Row(
       children: [
         Expanded(
@@ -427,6 +443,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _pickImage(ImageSource source) async {
     try {
       final navigator = Navigator.of(context);
+
       final XFile? image = await _picker.pickImage(
         source: source,
         maxWidth: 512,
@@ -437,28 +454,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (image != null && mounted) {
         navigator.pop(); // Close bottom sheet
 
-        // Save image to app directory
-        final File imageFile = File(image.path);
-        final File savedImage = await _saveImageToAppDirectory(imageFile);
-
-        if (mounted) {
+        if (kIsWeb) {
+          // On web, use the image path as a network URL (blob URL)
           setState(() {
-            _profileImageFile = savedImage;
-            _profileImageUrl = null; // Clear network image
+            _profileImageUrl = image.path;
+            _profileImageFile = null;
             _hasCustomImage = true;
           });
 
           await _saveProfileImage();
+          _showSnackBar('Profile picture updated successfully');
+        } else {
+          // On mobile, save to app directory
+          try {
+            final File imageFile = File(image.path);
+            final File savedImage = await _saveImageToAppDirectory(imageFile);
+
+            if (mounted) {
+              setState(() {
+                _profileImageFile = savedImage;
+                _profileImageUrl = null;
+                _hasCustomImage = true;
+              });
+
+              await _saveProfileImage();
+              _showSnackBar('Profile picture updated successfully');
+            }
+          } catch (e) {
+            if (mounted) {
+              _showSnackBar('Failed to save image: ${e.toString()}');
+            }
+          }
         }
+      } else if (mounted) {
+        navigator.pop(); // Close bottom sheet even if no image selected
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar('Failed to pick image. Please try again.');
+        Navigator.of(context).pop(); // Close bottom sheet
+        _showSnackBar('Failed to pick image: ${e.toString()}');
       }
     }
   }
 
   Future<File> _saveImageToAppDirectory(File image) async {
+    if (kIsWeb) {
+      // On web, just return the file as-is (won't actually be used)
+      return image;
+    }
+
     final Directory appDir = await getApplicationDocumentsDirectory();
     final String fileName =
         'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
@@ -630,7 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const MedicalRecordsScreen(),
+                  builder: (context) => const DocumentManagementScreen(),
                 ),
               );
             },
@@ -673,21 +717,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.description,
-            title: 'Prescriptions',
-            subtitle: 'View your prescription history',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PrescriptionsScreen(),
-                ),
-              );
-            },
-          ),
-
-          _buildDivider(),
-          _buildMenuItem(
             icon: Icons.help_outline,
             title: 'Help & Support',
             subtitle: 'Get help and contact support',
@@ -712,11 +741,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.settings,
             title: 'Settings',
             subtitle: 'App preferences and account settings',
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
+              // Refresh the profile screen when returning from settings
+              if (mounted) {
+                setState(() {
+                  _loadProfileImage();
+                });
+              }
             },
           ),
           _buildDivider(),

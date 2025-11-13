@@ -4,6 +4,7 @@ import 'appointments_screen.dart';
 import 'category_screen.dart';
 import 'inbox_screen.dart';
 import '../utils/responsive_utils.dart';
+import '../services/user_service.dart';
 import 'provider_profile_screen.dart';
 import 'facility_profile_screen.dart';
 import '../services/healthcare_provider_service.dart';
@@ -18,6 +19,7 @@ import 'contact_us_screen.dart';
 import 'about_screen.dart';
 import 'become_provider_screen.dart';
 import 'settings_screen.dart';
+import 'faqs_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,19 +31,78 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectedNavIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     MessageService.addListener(_onMessageUpdate);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     MessageService.removeListener(_onMessageUpdate);
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text;
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _searchResults = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      _searchResults = _performSearch(query);
+    });
+  }
+
+  List<Map<String, dynamic>> _performSearch(String query) {
+    final results = <Map<String, dynamic>>[];
+    final lowerQuery = query.toLowerCase();
+
+    // Search hospitals and clinics
+    final facilities = HealthcareFacilityService.getAllFacilities();
+    for (var facility in facilities) {
+      if (facility.name.toLowerCase().contains(lowerQuery) ||
+          facility.type.name.toLowerCase().contains(lowerQuery) ||
+          facility.address.toLowerCase().contains(lowerQuery)) {
+        results.add({
+          'type': 'facility',
+          'name': facility.name,
+          'subtitle': facility.type.name,
+          'rating': facility.rating.toStringAsFixed(2),
+          'data': facility,
+        });
+      }
+    }
+
+    // Search providers
+    final providers = HealthcareProviderService.getAllProviders();
+    for (var provider in providers) {
+      if (provider.name.toLowerCase().contains(lowerQuery) ||
+          provider.specialization.toLowerCase().contains(lowerQuery)) {
+        results.add({
+          'type': 'provider',
+          'name': provider.name,
+          'subtitle': provider.specialization,
+          'rating': provider.rating.toStringAsFixed(2),
+          'data': provider,
+        });
+      }
+    }
+
+    return results;
   }
 
   void _onMessageUpdate() {
@@ -107,23 +168,182 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         children: [
           _buildHomeHeader(),
+          _buildSearchBar(),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHospitalsSection(),
-                  _buildPharmaciesSection(),
-                  _buildProvidersSection(),
-                  _buildLaboratoriesSection(),
-                  SizedBox(
-                    height: ResponsiveUtils.getResponsiveSpacing(context, 80),
+            child: _isSearching
+                ? _buildSearchResults()
+                : SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHospitalsSection(),
+                        _buildPharmaciesSection(),
+                        _buildProvidersSection(),
+                        _buildLaboratoriesSection(),
+                        SizedBox(
+                          height: ResponsiveUtils.getResponsiveSpacing(
+                            context,
+                            80,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No results found',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try searching with different keywords',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.all(
+        ResponsiveUtils.getResponsiveSpacing(context, 16),
+      ),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final result = _searchResults[index];
+        return Card(
+          margin: EdgeInsets.only(
+            bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
+          ),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey[300]!),
+          ),
+          child: ListTile(
+            contentPadding: EdgeInsets.all(
+              ResponsiveUtils.getResponsiveSpacing(context, 12),
+            ),
+            leading: CircleAvatar(
+              backgroundColor: Colors.grey[100],
+              child: Icon(
+                result['type'] == 'facility'
+                    ? Icons.local_hospital
+                    : Icons.person,
+                color: Colors.grey[700],
+              ),
+            ),
+            title: Text(
+              result['name'],
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  result['subtitle'],
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Colors.black),
+                    const SizedBox(width: 4),
+                    Text(
+                      result['rating'],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              if (result['type'] == 'facility') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        FacilityProfileScreen(facilityId: result['data'].id),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProviderProfileScreen(providerId: result['data'].id),
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+        vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Search doctors, hospitals, clinics, pharmacies...',
+            hintStyle: TextStyle(
+              color: Colors.grey[500],
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: Colors.grey[600],
+              size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtils.getResponsiveSpacing(context, 16),
+              vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -170,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'i i',
+                  UserService.currentUser?.name ?? 'User',
                   style: TextStyle(
                     fontSize: ResponsiveUtils.getResponsiveFontSize(
                       context,
@@ -181,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'i@gmail.com',
+                  UserService.currentUser?.email ?? 'user@example.com',
                   style: TextStyle(
                     fontSize: ResponsiveUtils.getResponsiveFontSize(
                       context,
@@ -265,6 +485,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           icon: Icons.home,
           title: 'Home',
           onTap: () {
+            Navigator.of(context).pop(); // Close the drawer
             setState(() {
               _selectedNavIndex = 0;
             });
@@ -293,13 +514,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           },
         ),
         _buildProfileMenuItem(
-          icon: Icons.description,
-          title: 'Prescription Reports',
-          onTap: () {
-            // Navigate to prescription reports
-          },
-        ),
-        _buildProfileMenuItem(
           icon: Icons.article,
           title: 'Terms & Conditions',
           onTap: () {
@@ -325,9 +539,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         _buildProfileMenuItem(
           icon: Icons.help,
-          title: 'Faqs',
+          title: 'FAQ',
           onTap: () {
-            // Navigate to FAQs
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FAQsScreen()),
+            );
           },
         ),
         _buildProfileMenuItem(
@@ -343,11 +560,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _buildProfileMenuItem(
           icon: Icons.settings,
           title: 'Settings',
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const SettingsScreen()),
             );
+            // Refresh the screen when returning from settings
+            if (mounted) {
+              setState(() {});
+            }
           },
         ),
         _buildProfileMenuItem(
@@ -563,7 +784,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
         SizedBox(
-          height: 200,
+          height: ResponsiveUtils.isSmallScreen(context) ? 190 : 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(
@@ -607,29 +828,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              children: [
-                Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[200]!, width: 1),
-                  ),
-                  child: _buildFacilityImage(imageUrl, getIcon()),
-                ),
-              ],
-            ),
-            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 6)),
-            ResponsiveUtils.safeText(
-              title,
-              style: TextStyle(
-                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 15),
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+            Container(
+              height: ResponsiveUtils.isSmallScreen(context) ? 110 : 120,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!, width: 1),
               ),
-              maxLines: 2,
+              child: _buildFacilityImage(imageUrl, getIcon()),
+            ),
+            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+            Flexible(
+              child: ResponsiveUtils.safeText(
+                title,
+                style: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+                maxLines: 2,
+              ),
             ),
             SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 2)),
             Row(
@@ -648,7 +868,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     style: TextStyle(
                       fontSize: ResponsiveUtils.getResponsiveFontSize(
                         context,
-                        15,
+                        13,
                       ),
                       color: Colors.black,
                       fontWeight: FontWeight.w500,
@@ -783,6 +1003,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         (p) => {
                           'title': '${p.name} - ${p.specialization}',
                           'rating': p.rating.toStringAsFixed(1),
+                          'location': p.location,
                         },
                       )
                       .toList(),
@@ -1038,6 +1259,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               'title': facility.name,
               'rating': facility.rating.toStringAsFixed(2),
               'imageUrl': facility.imageUrl,
+              'location': (facility.location['county'] ?? '').toString(),
             },
           )
           .toList(),
@@ -1057,6 +1279,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               'title': facility.name,
               'rating': facility.rating.toStringAsFixed(2),
               'imageUrl': facility.imageUrl,
+              'location': (facility.location['county'] ?? '').toString(),
             },
           )
           .toList(),
@@ -1076,6 +1299,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               'title': facility.name,
               'rating': facility.rating.toStringAsFixed(2),
               'imageUrl': facility.imageUrl,
+              'location': (facility.location['county'] ?? '').toString(),
             },
           )
           .toList(),

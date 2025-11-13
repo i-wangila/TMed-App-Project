@@ -121,15 +121,12 @@ class _WalletScreenState extends State<WalletScreen> {
     return Container(
       padding: ResponsiveUtils.getResponsivePadding(context),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E86AB), Color(0xFF4A90A4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[300]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.3),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -144,13 +141,13 @@ class _WalletScreenState extends State<WalletScreen> {
               Text(
                 'Available Balance',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: Colors.grey[600],
                   fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
                 ),
               ),
               Icon(
                 Icons.account_balance_wallet,
-                color: Colors.white70,
+                color: Colors.grey[600],
                 size: ResponsiveUtils.isSmallScreen(context) ? 20 : 24,
               ),
             ],
@@ -161,7 +158,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ? WalletService.formatCurrency(wallet.balance)
                 : 'KES ****.**',
             style: TextStyle(
-              color: Colors.white,
+              color: Colors.black,
               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
               fontWeight: FontWeight.bold,
             ),
@@ -170,7 +167,7 @@ class _WalletScreenState extends State<WalletScreen> {
           Text(
             'Last updated: ${DateFormat('MMM dd, HH:mm').format(wallet.lastUpdated)}',
             style: TextStyle(
-              color: Colors.white60,
+              color: Colors.grey[500],
               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
             ),
           ),
@@ -201,7 +198,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         child: _buildActionCard(
                           'Top Up',
                           Icons.add,
-                          Colors.green,
+                          Colors.grey[700]!,
                           () => _showTopUpDialog(),
                         ),
                       ),
@@ -215,7 +212,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         child: _buildActionCard(
                           'Withdraw',
                           Icons.remove,
-                          Colors.orange,
+                          Colors.grey[700]!,
                           () => _showWithdrawDialog(),
                         ),
                       ),
@@ -230,7 +227,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         child: _buildActionCard(
                           'Pay Bills',
                           Icons.receipt,
-                          Colors.purple,
+                          Colors.grey[700]!,
                           () => _showBillPaymentDialog(),
                         ),
                       ),
@@ -244,7 +241,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: _buildActionCard(
                       'Top Up',
                       Icons.add,
-                      Colors.green,
+                      Colors.grey[700]!,
                       () => _showTopUpDialog(),
                     ),
                   ),
@@ -255,7 +252,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: _buildActionCard(
                       'Withdraw',
                       Icons.remove,
-                      Colors.orange,
+                      Colors.grey[700]!,
                       () => _showWithdrawDialog(),
                     ),
                   ),
@@ -266,7 +263,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: _buildActionCard(
                       'Pay Bills',
                       Icons.receipt,
-                      Colors.purple,
+                      Colors.grey[700]!,
                       () => _showBillPaymentDialog(),
                     ),
                   ),
@@ -365,7 +362,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         context,
                         14,
                       ),
-                      color: Colors.blue,
+                      color: Colors.black,
                     ),
                   ),
                 ),
@@ -420,7 +417,7 @@ class _WalletScreenState extends State<WalletScreen> {
               ResponsiveUtils.getResponsiveSpacing(context, 8),
             ),
             decoration: BoxDecoration(
-              color: amountColor.withValues(alpha: 0.1),
+              color: Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

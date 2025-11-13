@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/message.dart';
 import 'appointments_screen.dart';
-import 'prescriptions_screen.dart';
+import 'document_management_screen.dart';
 
 class NotificationChatScreen extends StatefulWidget {
   final Message message;
@@ -44,10 +44,10 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
               icon: const Icon(Icons.calendar_today),
               onPressed: () => _viewAppointment(),
             ),
-          if (widget.message.type == MessageType.prescription)
+          if (widget.message.isMedicalRecord)
             IconButton(
-              icon: const Icon(Icons.medication),
-              onPressed: () => _viewPrescription(),
+              icon: const Icon(Icons.medical_information),
+              onPressed: () => _viewMedicalRecord(),
             ),
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
@@ -154,7 +154,7 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 if (widget.message.type == MessageType.appointment ||
-                    widget.message.type == MessageType.prescription)
+                    widget.message.isMedicalRecord)
                   _buildActionButton(),
               ],
             ),
@@ -171,16 +171,19 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
     if (widget.message.type == MessageType.appointment) {
       buttonText = 'View Appointment';
       onPressed = _viewAppointment;
+    } else if (widget.message.isMedicalRecord) {
+      buttonText = _getMedicalRecordButtonText();
+      onPressed = _viewMedicalRecord;
     } else {
-      buttonText = 'View Prescription';
-      onPressed = _viewPrescription;
+      buttonText = 'View Details';
+      onPressed = () {};
     }
 
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        backgroundColor: Colors.blue[50],
-        foregroundColor: Colors.blue[700],
+        backgroundColor: Colors.grey[100],
+        foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -189,6 +192,25 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
+  }
+
+  String _getMedicalRecordButtonText() {
+    switch (widget.message.type) {
+      case MessageType.prescription:
+        return 'View Prescription';
+      case MessageType.labResults:
+        return 'View Lab Results';
+      case MessageType.medicalReport:
+        return 'View Medical Report';
+      case MessageType.xrayReport:
+        return 'View X-ray Report';
+      case MessageType.dischargeSummary:
+        return 'View Discharge Summary';
+      case MessageType.vaccinationRecord:
+        return 'View Vaccination Record';
+      default:
+        return 'View Record';
+    }
   }
 
   Widget _buildDisabledMessageInput() {
@@ -241,6 +263,16 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
         return 'Appointment Notification';
       case MessageType.prescription:
         return 'Prescription Notification';
+      case MessageType.labResults:
+        return 'Lab Results Notification';
+      case MessageType.medicalReport:
+        return 'Medical Report Notification';
+      case MessageType.xrayReport:
+        return 'X-ray Report Notification';
+      case MessageType.dischargeSummary:
+        return 'Discharge Summary Notification';
+      case MessageType.vaccinationRecord:
+        return 'Vaccination Record Notification';
       case MessageType.system:
         return 'System Notification';
       default:
@@ -253,7 +285,17 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
       case MessageType.appointment:
         return 'Appointment Update';
       case MessageType.prescription:
-        return 'Prescription Ready';
+        return 'New Prescription';
+      case MessageType.labResults:
+        return 'Lab Results Available';
+      case MessageType.medicalReport:
+        return 'Medical Report Available';
+      case MessageType.xrayReport:
+        return 'X-ray Report Available';
+      case MessageType.dischargeSummary:
+        return 'Discharge Summary Available';
+      case MessageType.vaccinationRecord:
+        return 'Vaccination Record Available';
       case MessageType.system:
         return 'System Alert';
       default:
@@ -267,6 +309,16 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
         return Icons.calendar_today;
       case MessageType.prescription:
         return Icons.medication;
+      case MessageType.labResults:
+        return Icons.science;
+      case MessageType.medicalReport:
+        return Icons.description;
+      case MessageType.xrayReport:
+        return Icons.medical_information;
+      case MessageType.dischargeSummary:
+        return Icons.local_hospital;
+      case MessageType.vaccinationRecord:
+        return Icons.vaccines;
       case MessageType.system:
         return Icons.info;
       default:
@@ -275,42 +327,25 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
   }
 
   Color _getNotificationColor() {
+    if (widget.message.isMedicalRecord) {
+      return Colors.grey[50]!;
+    }
     switch (widget.message.type) {
       case MessageType.appointment:
-        return Colors.blue[50]!;
-      case MessageType.prescription:
-        return Colors.orange[50]!;
+        return Colors.grey[50]!;
       case MessageType.system:
-        return Colors.green[50]!;
+        return Colors.grey[50]!;
       default:
         return Colors.grey[100]!;
     }
   }
 
   Color _getNotificationBorderColor() {
-    switch (widget.message.type) {
-      case MessageType.appointment:
-        return Colors.blue[200]!;
-      case MessageType.prescription:
-        return Colors.orange[200]!;
-      case MessageType.system:
-        return Colors.green[200]!;
-      default:
-        return Colors.grey[300]!;
-    }
+    return Colors.grey[300]!;
   }
 
   Color _getNotificationIconColor() {
-    switch (widget.message.type) {
-      case MessageType.appointment:
-        return Colors.blue[700]!;
-      case MessageType.prescription:
-        return Colors.orange[700]!;
-      case MessageType.system:
-        return Colors.green[700]!;
-      default:
-        return Colors.grey[700]!;
-    }
+    return Colors.grey[700]!;
   }
 
   void _viewAppointment() {
@@ -320,10 +355,11 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
     );
   }
 
-  void _viewPrescription() {
+  void _viewMedicalRecord() {
+    // Navigate to Medical Records (Document Management Screen)
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const PrescriptionsScreen()),
+      MaterialPageRoute(builder: (context) => const DocumentManagementScreen()),
     );
   }
 

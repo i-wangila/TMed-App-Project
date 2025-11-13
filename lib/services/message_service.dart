@@ -81,6 +81,31 @@ class MessageService {
           category: MessageCategory.systemNotification,
           isRead: true,
         ),
+        // Medical record notifications
+        Message(
+          id: '7',
+          senderId: 'system',
+          senderName: 'Dr. Sarah Mwangi',
+          content:
+              'Your lab results are now available. Please review them in your Medical Records.',
+          timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+          type: MessageType.labResults,
+          category: MessageCategory.systemNotification,
+          documentId: 'doc_lab_001',
+          isRead: false,
+        ),
+        Message(
+          id: '8',
+          senderId: 'system',
+          senderName: 'Nairobi Hospital',
+          content:
+              'Your X-ray report has been uploaded to your medical records. Click to view.',
+          timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 4)),
+          type: MessageType.xrayReport,
+          category: MessageCategory.systemNotification,
+          documentId: 'doc_xray_001',
+          isRead: false,
+        ),
       ]);
       await _saveMessages();
     }
@@ -294,6 +319,7 @@ class MessageService {
     required String content,
     required MessageType type,
     MessageCategory category = MessageCategory.healthcareProvider,
+    String? documentId,
     bool isRead = false,
   }) async {
     final message = Message(
@@ -304,6 +330,7 @@ class MessageService {
       timestamp: DateTime.now(),
       type: type,
       category: category,
+      documentId: documentId,
       isRead: isRead,
     );
     _messages.insert(0, message);
@@ -317,6 +344,23 @@ class MessageService {
 
   // Check if messages are loaded
   static bool get isLoaded => _messages.isNotEmpty;
+
+  // Helper method to create medical record notification
+  static Future<void> createMedicalRecordNotification({
+    required String providerName,
+    required MessageType recordType,
+    required String content,
+    String? documentId,
+  }) async {
+    await addMessage(
+      senderId: 'system',
+      senderName: providerName,
+      content: content,
+      type: recordType,
+      category: MessageCategory.systemNotification,
+      documentId: documentId,
+    );
+  }
 
   // Listener management for real-time updates
   static void addListener(VoidCallback listener) {

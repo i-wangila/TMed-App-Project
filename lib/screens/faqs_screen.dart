@@ -1,82 +1,166 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive_utils.dart';
 
-class FaqsScreen extends StatelessWidget {
-  const FaqsScreen({super.key});
+class FAQsScreen extends StatelessWidget {
+  const FAQsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Frequently Asked Questions'),
+        title: const Text(
+          'FAQ',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveUtils.getResponsivePadding(context),
         children: [
-          _buildFaqItem(
-            'How do I book an appointment?',
-            'You can book an appointment by browsing healthcare providers on the home screen, selecting a doctor or hospital, and clicking "Book Appointment". Choose your preferred date, time, and consultation type.',
+          _buildFAQItem(
+            context,
+            question: 'How do I book an appointment?',
+            answer:
+                'To book an appointment, navigate to the home screen, search for your preferred doctor or healthcare facility, tap on their profile, and select "Book Appointment". Choose your preferred date and time, then confirm your booking.',
           ),
-          _buildFaqItem(
-            'What payment methods are accepted?',
-            'We accept payments through our integrated wallet system. You can top up your wallet using M-Pesa, Airtel Money, or Telkom mobile money services.',
+          _buildFAQItem(
+            context,
+            question: 'How can I cancel or reschedule my appointment?',
+            answer:
+                'Go to the Appointments tab from the bottom navigation, find your appointment, and tap on it. You\'ll see options to either reschedule or cancel the appointment.',
           ),
-          _buildFaqItem(
-            'How do video consultations work?',
-            'Video consultations are conducted through our secure platform. At your appointment time, click "Video Call" in your appointments section to connect with your healthcare provider.',
+          _buildFAQItem(
+            context,
+            question: 'What payment methods are accepted?',
+            answer:
+                'We accept M-Pesa, bank transfers, and credit/debit cards. You can also use your TMed wallet for quick and easy payments.',
           ),
-          _buildFaqItem(
-            'Can I reschedule my appointment?',
-            'Yes, you can reschedule appointments up to 2 hours before the scheduled time. Go to your appointments and click "Reschedule" to select a new time.',
+          _buildFAQItem(
+            context,
+            question: 'How do I add money to my wallet?',
+            answer:
+                'Tap on the Profile icon, select Wallet, then tap "Top Up". Choose your preferred payment method (M-Pesa, Bank Transfer, or Card) and enter the amount you wish to add.',
           ),
-          _buildFaqItem(
-            'How do I access my prescriptions?',
-            'Your prescriptions are available in the "Prescription Reports" section of your profile. You can view, download, and track the status of your prescriptions.',
+          _buildFAQItem(
+            context,
+            question: 'Can I access my medical records?',
+            answer:
+                'Yes! Go to Settings > Manage My Account > Medical Records to view all your medical documents including lab results, prescriptions, and discharge summaries shared by healthcare providers.',
           ),
-          _buildFaqItem(
-            'Is my medical information secure?',
-            'Yes, all medical information is encrypted and stored securely. We comply with healthcare privacy regulations and never share your information without consent.',
+          _buildFAQItem(
+            context,
+            question: 'How do I search for doctors or hospitals?',
+            answer:
+                'Use the search bar on the home screen to find doctors, hospitals, clinics, pharmacies, or laboratories. You can search by name, specialization, or location.',
           ),
-          _buildFaqItem(
-            'What if I have a medical emergency?',
-            'TMed is not for medical emergencies. In case of emergency, call 999 or go to the nearest emergency room immediately.',
+          _buildFAQItem(
+            context,
+            question: 'How do I filter healthcare facilities by county?',
+            answer:
+                'When viewing a category (Hospitals, Pharmacies, etc.), tap the three-dot menu icon at the top right and select "Filter by County". Choose your preferred county to see facilities in that area.',
           ),
-          _buildFaqItem(
-            'How do I update my profile information?',
-            'Go to your profile, click on "My Accounts" and then "Edit Profile" to update your personal information, contact details, and medical history.',
+          _buildFAQItem(
+            context,
+            question: 'Can I chat with my doctor?',
+            answer:
+                'Yes! After booking an appointment, you can message your doctor through the Inbox tab. You can also initiate video or voice calls if the doctor is available.',
           ),
-          _buildFaqItem(
-            'Can I get a refund for consultations?',
-            'Refunds are available if you cancel at least 24 hours before your appointment. Emergency cancellations are reviewed case by case.',
+          _buildFAQItem(
+            context,
+            question: 'How do I become a healthcare provider on TMed?',
+            answer:
+                'Tap on the Profile icon, then select "Become a Healthcare Provider". Fill in your professional details, upload your credentials, and submit for verification. Our team will review and approve your application.',
           ),
-          _buildFaqItem(
-            'How do I contact customer support?',
-            'You can contact support through the "Contact Us" section in your profile, or email us at support@tmed.com, or call +254740109195.',
+          _buildFAQItem(
+            context,
+            question: 'Is my personal information secure?',
+            answer:
+                'Absolutely! We use industry-standard encryption to protect your data. Your medical records and personal information are stored securely and only shared with healthcare providers you authorize.',
           ),
+          _buildFAQItem(
+            context,
+            question: 'How do I update my profile information?',
+            answer:
+                'Go to Settings > Manage My Account. Here you can update your personal information, medical details, and profile picture.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'What should I do if I forget my password?',
+            answer:
+                'On the login screen, tap "Forgot Password". Enter your registered email address, and we\'ll send you instructions to reset your password.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'Can I rate and review healthcare providers?',
+            answer:
+                'Yes! After your appointment, you can rate your experience and leave a review. This helps other users make informed decisions.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'How do I contact customer support?',
+            answer:
+                'Tap on the Profile icon and select "Contact Us". You can reach us via email, phone, or through the in-app contact form. Our support team is available 24/7.',
+          ),
+          SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
         ],
       ),
     );
   }
 
-  Widget _buildFaqItem(String question, String answer) {
+  static Widget _buildFAQItem(
+    BuildContext context, {
+    required String question,
+    required String answer,
+  }) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        title: Text(
-          question,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              answer,
-              style: const TextStyle(fontSize: 14, height: 1.5),
+      margin: EdgeInsets.only(
+        bottom: ResponsiveUtils.getResponsiveSpacing(context, 16),
+      ),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[300]!),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.all(
+            ResponsiveUtils.getResponsiveSpacing(context, 16),
+          ),
+          childrenPadding: EdgeInsets.fromLTRB(
+            ResponsiveUtils.getResponsiveSpacing(context, 16),
+            0,
+            ResponsiveUtils.getResponsiveSpacing(context, 16),
+            ResponsiveUtils.getResponsiveSpacing(context, 16),
+          ),
+          title: Text(
+            question,
+            style: TextStyle(
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
             ),
           ),
-        ],
+          iconColor: Colors.black,
+          collapsedIconColor: Colors.grey[600],
+          children: [
+            Text(
+              answer,
+              style: TextStyle(
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                color: Colors.grey[700],
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
