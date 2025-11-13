@@ -809,19 +809,45 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (formKey.currentState!.validate()) {
-                      // TODO: Implement password change logic
+                      // Show loading indicator
+                      Navigator.pop(context);
+                      showDialog(
+                        context: this.context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ),
+                      );
+
+                      // Call the change password service
+                      final result = await UserService.changePassword(
+                        currentPassword: currentPasswordController.text,
+                        newPassword: newPasswordController.text,
+                      );
+
+                      // Dispose controllers
                       currentPasswordController.dispose();
                       newPasswordController.dispose();
                       confirmPasswordController.dispose();
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(this.context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Password changed successfully'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+
+                      // Close loading dialog
+                      if (mounted) {
+                        Navigator.pop(this.context);
+                      }
+
+                      // Show result message
+                      if (mounted) {
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          SnackBar(
+                            content: Text(result.message),
+                            backgroundColor: result.success
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(

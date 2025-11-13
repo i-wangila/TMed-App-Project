@@ -171,9 +171,12 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
           ),
           TextButton(
             onPressed: () async {
+              final navigator = Navigator.of(context);
               await WalletService.removePaymentCard(cardId);
-              setState(() {});
-              Navigator.pop(context);
+              if (mounted) {
+                setState(() {});
+              }
+              navigator.pop();
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),
           ),

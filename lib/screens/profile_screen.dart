@@ -238,7 +238,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     child: IconButton(
                       onPressed: () {
-                        print('Camera icon clicked');
                         _showImagePickerDialog();
                       },
                       icon: const Icon(Icons.camera_alt, color: Colors.black),
@@ -314,7 +313,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showImagePickerDialog() {
-    print('Camera icon tapped - showing image picker dialog');
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,

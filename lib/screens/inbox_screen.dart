@@ -304,6 +304,8 @@ class _InboxScreenState extends State<InboxScreen> {
       }
     }
 
+    if (!mounted) return;
+
     // Use the new message category to determine navigation
     if (message.isSystemNotification) {
       // Open notification chat screen (read-only) for system notifications

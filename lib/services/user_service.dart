@@ -150,7 +150,7 @@ class UserService {
       }
 
       final updatedUser = updatedProfile.copyWith();
-      
+
       // If email changed, remove old entry and add new one
       if (oldEmail != newEmail) {
         _users.remove(oldEmail);
@@ -158,7 +158,7 @@ class UserService {
       } else {
         _users[oldEmail] = updatedUser;
       }
-      
+
       _currentUser = updatedUser;
 
       await _saveUsers();
@@ -261,6 +261,61 @@ class UserService {
   // Check if email exists
   static bool emailExists(String email) {
     return _users.containsKey(email.toLowerCase().trim());
+  }
+
+  // Change password
+  static Future<AuthResult> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      if (_currentUser == null) {
+        return AuthResult(success: false, message: 'User not logged in');
+      }
+
+      // Verify current password
+      if (!_verifyPassword(currentPassword, _currentUser!.password!)) {
+        return AuthResult(
+          success: false,
+          message: 'Current password is incorrect',
+        );
+      }
+
+      // Validate new password
+      if (newPassword.length < 6) {
+        return AuthResult(
+          success: false,
+          message: 'New password must be at least 6 characters',
+        );
+      }
+
+      // Update password
+      final updatedUser = _currentUser!.copyWith(
+        password: _hashPassword(newPassword),
+      );
+
+      _users[_currentUser!.email] = updatedUser;
+      _currentUser = updatedUser;
+
+      await _saveUsers();
+
+      if (kDebugMode) {
+        print('Password changed successfully');
+      }
+
+      return AuthResult(
+        success: true,
+        message: 'Password changed successfully',
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to change password: $e');
+      }
+      return AuthResult(
+        success: false,
+        message: 'Failed to change password: $e',
+      );
+    }
   }
 }
 

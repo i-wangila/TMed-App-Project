@@ -321,12 +321,15 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
             onPressed: () async {
               if (phoneController.text.isNotEmpty &&
                   nameController.text.isNotEmpty) {
+                final navigator = Navigator.of(context);
                 await WalletService.addMpesaAccount(
                   phoneNumber: phoneController.text,
                   name: nameController.text,
                 );
-                setState(() {});
-                Navigator.pop(context);
+                if (mounted) {
+                  setState(() {});
+                }
+                navigator.pop();
               }
             },
             child: const Text('Add'),
@@ -398,14 +401,17 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
                 nameController,
                 branchController,
               ].every((c) => c.text.isNotEmpty)) {
+                final navigator = Navigator.of(context);
                 await WalletService.addBankAccount(
                   bankName: bankController.text,
                   accountNumber: accountController.text,
                   accountName: nameController.text,
                   branchCode: branchController.text,
                 );
-                setState(() {});
-                Navigator.pop(context);
+                if (mounted) {
+                  setState(() {});
+                }
+                navigator.pop();
               }
             },
             child: const Text('Add'),
@@ -430,9 +436,12 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
           ),
           TextButton(
             onPressed: () async {
+              final navigator = Navigator.of(context);
               await WalletService.removeMpesaAccount(id);
-              setState(() {});
-              Navigator.pop(context);
+              if (mounted) {
+                setState(() {});
+              }
+              navigator.pop();
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),
           ),
@@ -456,9 +465,12 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen>
           ),
           TextButton(
             onPressed: () async {
+              final navigator = Navigator.of(context);
               await WalletService.removeBankAccount(id);
-              setState(() {});
-              Navigator.pop(context);
+              if (mounted) {
+                setState(() {});
+              }
+              navigator.pop();
             },
             child: const Text('Remove', style: TextStyle(color: Colors.red)),
           ),

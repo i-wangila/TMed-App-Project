@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../services/appointment_service.dart';
 import '../services/provider_availability_service.dart';
 import '../services/call_service.dart';
+import '../services/user_service.dart';
 import '../models/appointment.dart';
 import '../utils/responsive_utils.dart';
 import 'reschedule_appointment_screen.dart';
@@ -571,13 +572,25 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 
   void _startVideoCall(Appointment appointment) async {
+    // Get current user information
+    final currentUser = UserService.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to start call. Please log in again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Create a video call session
     final callSession = await CallService.startCall(
       providerId: appointment.providerId,
       providerName: appointment.providerName,
       callType: CallType.video,
-      patientId: 'patient_123', // TODO: Get from user service
-      patientName: 'Current User', // TODO: Get from user service
+      patientId: currentUser.email, // Use email as unique identifier
+      patientName: currentUser.name,
     );
 
     if (mounted) {
@@ -592,13 +605,25 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 
   void _startVoiceCall(Appointment appointment) async {
+    // Get current user information
+    final currentUser = UserService.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to start call. Please log in again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Create a voice call session
     final callSession = await CallService.startCall(
       providerId: appointment.providerId,
       providerName: appointment.providerName,
       callType: CallType.voice,
-      patientId: 'patient_123', // TODO: Get from user service
-      patientName: 'Current User', // TODO: Get from user service
+      patientId: currentUser.email, // Use email as unique identifier
+      patientName: currentUser.name,
     );
 
     if (mounted) {
@@ -666,7 +691,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     // Show quick reschedule options first
     final shouldUseFullScreen = await _showQuickRescheduleOptions(appointment);
 
-    if (shouldUseFullScreen == true) {
+    if (shouldUseFullScreen == true && mounted) {
       // Use full reschedule screen
       final result = await Navigator.push(
         context,
