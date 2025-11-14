@@ -506,6 +506,77 @@ class UserService {
       );
     }
   }
+
+  // Suspend user account
+  static Future<bool> suspendUser(String userId) async {
+    try {
+      final user = _users[userId];
+      if (user == null) return false;
+
+      // Update user with suspended status (you can add a status field to UserProfile)
+      // For now, we'll just log it
+      if (kDebugMode) {
+        print('User suspended: $userId');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error suspending user: $e');
+      }
+      return false;
+    }
+  }
+
+  // Delete user account
+  static Future<bool> deleteUser(String userId) async {
+    try {
+      // Don't allow deleting current user
+      if (_currentUser?.id == userId) {
+        if (kDebugMode) {
+          print('Cannot delete current user');
+        }
+        return false;
+      }
+
+      _users.remove(userId);
+      await _saveUsers();
+
+      if (kDebugMode) {
+        print('User deleted: $userId');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deleting user: $e');
+      }
+      return false;
+    }
+  }
+
+  // Restrict user access (limited access for fund withdrawal)
+  static Future<bool> restrictUserAccess(String userId, bool restricted) async {
+    try {
+      final user = _users[userId];
+      if (user == null) return false;
+
+      // You can add a 'restricted' field to UserProfile model
+      // For now, we'll just log it
+      if (kDebugMode) {
+        print(
+          'User access ${restricted ? "restricted" : "unrestricted"}: $userId',
+        );
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error restricting user access: $e');
+      }
+      return false;
+    }
+  }
 }
 
 class AuthResult {

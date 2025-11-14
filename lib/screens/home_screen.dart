@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'appointments_screen.dart';
 import 'category_screen.dart';
@@ -127,12 +128,57 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.white,
-      endDrawer: _buildProfileMenuDrawer(),
-      body: _getSelectedScreen(),
-      bottomNavigationBar: _buildBottomNavBar(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldExit = await _showExitConfirmation();
+        if (shouldExit == true && context.mounted) {
+          // Only exit if user confirms
+          if (kIsWeb) {
+            // On web, just show a message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please use logout to exit the app'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          } else {
+            // On mobile, exit the app
+            exit(0);
+          }
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: Colors.white,
+        endDrawer: _buildProfileMenuDrawer(),
+        body: _getSelectedScreen(),
+        bottomNavigationBar: _buildBottomNavBar(),
+      ),
+    );
+  }
+
+  Future<bool?> _showExitConfirmation() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text(
+          'Do you want to exit the app? Please use the logout button to sign out.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -162,6 +208,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       case 2:
         return const InboxScreen();
       case 3:
+        return _buildHomeContent();
+      case 4:
+        // Provider Dashboard - navigate to provider dashboard screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushNamed(context, '/provider-dashboard');
+          // Reset to home after navigation
+          setState(() {
+            _selectedNavIndex = 0;
+          });
+        });
         return _buildHomeContent();
       default:
         return _buildHomeContent();
@@ -993,6 +1049,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _navigateToProviderProfileNew(ProviderProfile provider) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProviderProfileScreen(providerId: provider.id),
+      ),
+    );
+  }
+
   void _navigateToCategory(String title, List<Map<String, String>> items) {
     Navigator.push(
       context,
@@ -1004,6 +1069,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildProvidersSection() {
+    // Hide providers section if current user is a provider
+    final currentUser = UserService.currentUser;
+    if (currentUser?.isProvider == true) {
+      return const SizedBox.shrink();
+    }
+
     // Use new ProviderService - only show approved providers
     final providers = ProviderService.getApprovedProviders();
 
@@ -1086,7 +1157,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildProviderCard(provider) {
     final providerName = ProviderService.getProviderDisplayName(provider.id);
     return GestureDetector(
-      onTap: () => _navigateToProviderProfile(providerName, 'Doctors'),
+      onTap: () => _navigateToProviderProfileNew(provider),
       child: Container(
         width: 160,
         margin: EdgeInsets.only(
@@ -1162,7 +1233,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildProviderImage(provider) {
-    // Get user profile to access profile picture
+    // First check if provider has profile images from registration
+    if (provider.profileImages != null && provider.profileImages.isNotEmpty) {
+      final firstImage = provider.profileImages.first;
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: kIsWeb
+            ? Image.network(
+                firstImage,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildDefaultProviderAvatar(provider);
+                },
+              )
+            : Image.file(
+                File(firstImage),
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildDefaultProviderAvatar(provider);
+                },
+              ),
+      );
+    }
+
+    // Fallback to user profile picture
     final users = UserService.getAllUsers();
     final user = users.firstWhere(
       (u) => u.id == provider.userId,
@@ -1231,6 +1329,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildBottomNavBar() {
+    // Check if user has approved provider account
+    final currentUser = UserService.currentUser;
+    final hasApprovedProvider =
+        currentUser != null &&
+        ProviderService.getProviderByUserId(currentUser.id)?.status ==
+            ProviderStatus.approved;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1254,6 +1359,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               _buildNavItem(Icons.home, 'Home', 0),
               _buildNavItem(Icons.calendar_today, 'Appointments', 1),
               _buildNavItem(Icons.inbox, 'Inbox', 2),
+              if (hasApprovedProvider)
+                _buildNavItem(Icons.dashboard, 'Provider', 4),
               _buildNavItem(Icons.person, 'Profile', 3),
             ],
           ),
@@ -1269,6 +1376,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (index == 3) {
           // Profile - open drawer
           _scaffoldKey.currentState?.openEndDrawer();
+        } else if (index == 4) {
+          // Provider Dashboard - navigate to provider dashboard
+          Navigator.pushNamed(context, '/provider-dashboard');
         } else {
           setState(() {
             _selectedNavIndex = index;
@@ -1299,6 +1409,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildHospitalsSection() {
+    // Hide hospitals section if current user is a provider
+    final currentUser = UserService.currentUser;
+    if (currentUser?.isProvider == true) {
+      return const SizedBox.shrink();
+    }
+
     final hospitals = HealthcareFacilityService.getFacilitiesByType(
       FacilityType.hospital,
     );
@@ -1323,6 +1439,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildPharmaciesSection() {
+    // Hide pharmacies section if current user is a provider
+    final currentUser = UserService.currentUser;
+    if (currentUser?.isProvider == true) {
+      return const SizedBox.shrink();
+    }
+
     final pharmacies = HealthcareFacilityService.getFacilitiesByType(
       FacilityType.pharmacy,
     );
@@ -1343,6 +1465,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildLaboratoriesSection() {
+    // Hide laboratories section if current user is a provider
+    final currentUser = UserService.currentUser;
+    if (currentUser?.isProvider == true) {
+      return const SizedBox.shrink();
+    }
+
     final laboratories = HealthcareFacilityService.getFacilitiesByType(
       FacilityType.laboratory,
     );

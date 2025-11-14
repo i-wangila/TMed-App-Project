@@ -376,4 +376,33 @@ class MessageService {
       listener();
     }
   }
+
+  // Update or create a conversation (for chat inbox)
+  // This ensures only one conversation entry exists per patient-provider pair
+  static Future<void> updateOrCreateConversation({
+    required String conversationId,
+    required String senderId,
+    required String senderName,
+    required String content,
+  }) async {
+    // Remove existing conversation with this ID if it exists
+    _messages.removeWhere((msg) => msg.id == conversationId);
+
+    // Create new conversation entry with updated content
+    final conversation = Message(
+      id: conversationId,
+      senderId: senderId,
+      senderName: senderName,
+      content: content,
+      timestamp: DateTime.now(),
+      type: MessageType.text,
+      category: MessageCategory.healthcareProvider,
+      isRead: false,
+    );
+
+    // Insert at the beginning (most recent)
+    _messages.insert(0, conversation);
+    await _saveMessages();
+    _notifyListeners();
+  }
 }

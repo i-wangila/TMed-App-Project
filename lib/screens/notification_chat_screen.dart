@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/message.dart';
+import '../services/user_service.dart';
 import 'appointments_screen.dart';
-import 'document_management_screen.dart';
+import 'medical_records_screen.dart';
 
 class NotificationChatScreen extends StatefulWidget {
   final Message message;
@@ -39,7 +40,9 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          if (widget.message.type == MessageType.appointment)
+          // Hide calendar icon for providers (they don't have patient appointments)
+          if (widget.message.type == MessageType.appointment &&
+              UserService.currentUser?.isProvider != true)
             IconButton(
               icon: const Icon(Icons.calendar_today),
               onPressed: () => _viewAppointment(),
@@ -356,10 +359,14 @@ class _NotificationChatScreenState extends State<NotificationChatScreen> {
   }
 
   void _viewMedicalRecord() {
-    // Navigate to Medical Records (Document Management Screen)
+    // Navigate to Medical Records Screen with highlighted document
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const DocumentManagementScreen()),
+      MaterialPageRoute(
+        builder: (context) => MedicalRecordsScreen(
+          highlightDocumentId: widget.message.documentId,
+        ),
+      ),
     );
   }
 

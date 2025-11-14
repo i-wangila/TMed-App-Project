@@ -7,7 +7,6 @@ import '../services/healthcare_facility_service.dart';
 import '../services/review_service.dart';
 import 'provider_reviews_screen.dart';
 import 'provider_reviews_list_screen.dart';
-import 'rate_any_provider_screen.dart';
 
 class FacilityProfileScreen extends StatefulWidget {
   final String facilityId;
@@ -654,19 +653,14 @@ class _FacilityProfileScreenState extends State<FacilityProfileScreen> {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RateAnyProviderScreen(
-                            providerId: facility!.id,
-                            providerName: facility!.name,
-                            providerType: _getFacilityProviderType(
-                              facility!.type,
-                            ),
-                            description:
-                                'Rate this ${facility!.typeDisplayName.toLowerCase()}',
+                    onTap: () {
+                      // Rating functionality for facilities
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Rating feature coming soon for facilities',
                           ),
+                          backgroundColor: Colors.blue,
                         ),
                       );
                       _loadFacility();

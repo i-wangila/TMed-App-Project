@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
-import '../models/healthcare_provider.dart';
-import '../models/review.dart';
+import '../models/provider_profile.dart';
+import '../models/user_profile.dart';
 import '../models/message.dart';
-import '../services/healthcare_provider_service.dart';
-import '../services/review_service.dart';
-import '../services/call_service.dart';
-import '../services/message_service.dart';
-import 'book_appointment_screen.dart';
-import 'provider_reviews_screen.dart';
-import 'provider_reviews_list_screen.dart';
-import 'rate_any_provider_screen.dart';
-import 'call_screen.dart';
+import '../services/provider_service.dart';
+import '../services/user_service.dart';
 import 'chat_screen.dart';
+import 'book_provider_appointment_screen.dart';
+import 'rate_any_provider_screen.dart';
 
 class ProviderProfileScreen extends StatefulWidget {
   final String providerId;
@@ -25,7 +20,8 @@ class ProviderProfileScreen extends StatefulWidget {
 }
 
 class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
-  HealthcareProvider? provider;
+  ProviderProfile? provider;
+  UserProfile? user;
   bool isLoading = true;
 
   @override
@@ -36,7 +32,19 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
 
   void _loadProvider() {
     setState(() {
-      provider = HealthcareProviderService.getProviderById(widget.providerId);
+      provider = ProviderService.getProviderById(widget.providerId);
+      if (provider != null) {
+        final users = UserService.getAllUsers();
+        user = users.firstWhere(
+          (u) => u.id == provider!.userId,
+          orElse: () => UserProfile(
+            id: provider!.userId,
+            name: 'Provider',
+            email: '',
+            phone: '',
+          ),
+        );
+      }
       isLoading = false;
     });
   }
@@ -67,20 +75,33 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             child: Column(
               children: [
                 _buildProviderInfo(),
-                _buildAboutSection(),
-                _buildQualificationsSection(),
-                _buildCertificationsSection(),
-                _buildServicesSection(),
+                _buildProfessionalDetailsSection(),
+                if (provider!.bio != null && provider!.bio!.isNotEmpty)
+                  _buildAboutSection(),
+                if (provider!.servicesOffered.isNotEmpty ||
+                    (provider!.servicesDescription != null &&
+                        provider!.servicesDescription!.isNotEmpty))
+                  _buildServicesSection(),
+                if (provider!.qualifications.isNotEmpty)
+                  _buildQualificationsSection(),
+                if (provider!.workingDays.isNotEmpty ||
+                    provider!.workingHours.isNotEmpty)
+                  _buildAvailabilityScheduleSection(),
                 _buildReviewsSection(),
-                _buildAvailabilitySection(),
+                _buildContactInformationSection(),
+                if (provider!.insuranceAccepted.isNotEmpty)
+                  _buildInsuranceSection(),
+                if (provider!.certifications.isNotEmpty)
+                  _buildCertificationsSection(),
+                if (provider!.paymentMethods.isNotEmpty)
+                  _buildPaymentMethodsSection(),
                 const SizedBox(height: 100),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: _buildBookAppointmentButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: _buildActionButtons(),
     );
   }
 
@@ -90,116 +111,67 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
       pinned: true,
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
-      actions: [
-        IconButton(
-          icon: Icon(
-            provider!.isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: provider!.isFavorite ? Colors.red : Colors.black,
-          ),
-          onPressed: () {
-            setState(() {
-              HealthcareProviderService.toggleFavorite(provider!.id);
-              provider = HealthcareProviderService.getProviderById(
-                provider!.id,
-              );
-            });
-          },
-        ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.blue[50]!, Colors.white],
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 60),
-              Builder(
-                builder: (context) {
-                  final profileImage = _getProviderProfileImage();
-                  return CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.blue[100],
-                    backgroundImage: profileImage,
-                    onBackgroundImageError: profileImage != null
-                        ? (exception, stackTrace) {}
-                        : null,
-                    child: _shouldShowInitials()
-                        ? Text(
-                            provider!.name
-                                .split(' ')
-                                .map((e) => e[0])
-                                .take(2)
-                                .join(),
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[800],
-                            ),
-                          )
-                        : null,
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              Text(
-                provider!.name,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+      flexibleSpace: FlexibleSpaceBar(background: _buildHeaderImage()),
+    );
+  }
+
+  Widget _buildHeaderImage() {
+    if (provider!.profileImages.isNotEmpty) {
+      final firstImage = provider!.profileImages.first;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          kIsWeb
+              ? Image.network(
+                  firstImage,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildDefaultHeader(),
+                )
+              : Image.file(
+                  File(firstImage),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildDefaultHeader(),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                provider!.specialization,
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.star, color: Colors.amber, size: 20),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${provider!.rating}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProviderReviewsScreen(
-                            providerId: provider!.id,
-                            providerName: provider!.name,
-                          ),
-                        ),
-                      );
-                      // Refresh provider data when returning
-                      _loadProvider();
-                    },
-                    child: Text(
-                      '(${provider!.reviewCount} reviews)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue[600],
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.7),
                 ],
               ),
-            ],
+            ),
+          ),
+        ],
+      );
+    }
+    return _buildDefaultHeader();
+  }
+
+  Widget _buildDefaultHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue[50]!, Colors.white],
+        ),
+      ),
+      child: Center(
+        child: CircleAvatar(
+          radius: 60,
+          backgroundColor: Colors.blue[100],
+          child: Text(
+            user!.name.split(' ').map((e) => e[0]).take(2).join(),
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+            ),
           ),
         ),
       ),
@@ -208,378 +180,247 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
 
   Widget _buildProviderInfo() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow(Icons.location_on, 'Location', provider!.location),
-          const SizedBox(height: 16),
-          _buildInfoRow(Icons.phone, 'Phone', provider!.phone),
-          const SizedBox(height: 16),
-          _buildInfoRow(Icons.email, 'Email', provider!.email),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            Icons.work,
-            'Experience',
-            '${provider!.experienceYears} years',
+          Text(
+            user!.name,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
+          const SizedBox(height: 8),
+          if (provider!.specialization != null)
+            Text(
+              provider!.specialization!,
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           const SizedBox(height: 16),
-          _buildInfoRow(
-            Icons.language,
-            'Languages',
-            provider!.languages.join(', '),
+          Row(
+            children: [
+              Icon(Icons.star, color: Colors.amber, size: 20),
+              const SizedBox(width: 4),
+              Text(
+                provider!.rating.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '(${provider!.totalReviews} reviews)',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const Spacer(),
+              if (provider!.experienceYears != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${provider!.experienceYears} years exp.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blue[800],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            Icons.attach_money,
-            'Consultation Fee',
-            'KES ${provider!.consultationFee.toStringAsFixed(0)}',
-          ),
-          const SizedBox(height: 24),
-          _buildActionButtons(),
+          if (provider!.consultationFee != null) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.attach_money, color: Colors.green[700], size: 20),
+                const SizedBox(width: 4),
+                Text(
+                  'Consultation Fee: ${provider!.currency} ${provider!.consultationFee!.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.green[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (provider!.languages.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: provider!.languages.map((lang) {
+                return Chip(
+                  label: Text(lang),
+                  backgroundColor: Colors.grey[200],
+                  labelStyle: const TextStyle(fontSize: 12),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildProfessionalDetailsSection() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Professional Details',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Grid layout for professional information
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+              if (provider!.specialization != null)
+                _buildInfoCard(
+                  icon: Icons.medical_services,
+                  label: 'Specialization',
+                  value: provider!.specialization!,
+                  color: Colors.blue,
                 ),
+              if (provider!.experienceYears != null)
+                _buildInfoCard(
+                  icon: Icons.work,
+                  label: 'Experience',
+                  value: '${provider!.experienceYears} years',
+                  color: Colors.green,
+                ),
+              if (provider!.consultationFee != null)
+                _buildInfoCard(
+                  icon: Icons.payments,
+                  label: 'Consultation Fee',
+                  value: 'KES ${provider!.consultationFee!.toStringAsFixed(0)}',
+                  color: Colors.orange,
+                ),
+              if (provider!.languages.isNotEmpty)
+                _buildInfoCard(
+                  icon: Icons.language,
+                  label: 'Languages',
+                  value: provider!.languages.take(2).join(', '),
+                  color: Colors.purple,
+                ),
+              _buildInfoCard(
+                icon: Icons.people,
+                label: 'Total Patients',
+                value: provider!.totalPatients.toString(),
+                color: Colors.teal,
               ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              _buildInfoCard(
+                icon: Icons.calendar_today,
+                label: 'Appointments',
+                value: provider!.totalAppointments.toString(),
+                color: Colors.indigo,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAboutSection() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'About',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _startVoiceCall,
-            icon: const Icon(Icons.phone, size: 18),
-            label: const Text('Call'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.blue,
-              side: const BorderSide(color: Colors.blue),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _startChat,
-            icon: const Icon(Icons.message, size: 18),
-            label: const Text('Message'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.orange,
-              side: const BorderSide(color: Colors.orange),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _getDirections,
-            icon: const Icon(Icons.directions, size: 18),
-            label: const Text('Directions'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.green,
-              side: const BorderSide(color: Colors.green),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _startVoiceCall() async {
-    try {
-      final callSession = await CallService.startCall(
-        providerId: provider!.id,
-        providerName: provider!.name,
-        callType: CallType.voice,
-        patientId: 'current_user_id', // Replace with actual user ID
-        patientName: 'Current User', // Replace with actual user name
-      );
-
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CallScreen(callSession: callSession),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to start call. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _getDirections() {
-    // Show directions options
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    const Icon(Icons.directions, size: 24),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Get Directions',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'To: ${provider!.location}',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 24),
-                _buildDirectionOption(
-                  icon: Icons.map,
-                  title: 'Google Maps',
-                  subtitle: 'Open in Google Maps app',
-                  onTap: () => _openInGoogleMaps(),
-                ),
-                const SizedBox(height: 12),
-                _buildDirectionOption(
-                  icon: Icons.navigation,
-                  title: 'Apple Maps',
-                  subtitle: 'Open in Apple Maps (iOS)',
-                  onTap: () => _openInAppleMaps(),
-                ),
-                const SizedBox(height: 12),
-                _buildDirectionOption(
-                  icon: Icons.copy,
-                  title: 'Copy Address',
-                  subtitle: 'Copy location to clipboard',
-                  onTap: () => _copyAddress(),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDirectionOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: Colors.green[700], size: 20),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openInGoogleMaps() {
-    Navigator.pop(context);
-    // In a real app, you would use url_launcher to open Google Maps
-    // For now, show a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening Google Maps for: ${provider!.location}'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _openInAppleMaps() {
-    Navigator.pop(context);
-    // In a real app, you would use url_launcher to open Apple Maps
-    // For now, show a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening Apple Maps for: ${provider!.location}'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  void _copyAddress() {
-    Navigator.pop(context);
-    // In a real app, you would use Clipboard.setData to copy the address
-    // For now, show a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Address copied: ${provider!.location}'),
-        backgroundColor: Colors.grey[700],
-      ),
-    );
-  }
-
-  void _startChat() async {
-    try {
-      // Create a message that will appear in the inbox
-      final message = Message(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        senderId: provider!.id,
-        senderName: provider!.name,
-        content: 'Hello! I would like to start a conversation with you.',
-        timestamp: DateTime.now(),
-        type: MessageType.text,
-        category:
-            MessageCategory.healthcareProvider, // Ensures it's interactive
-        isRead: false,
-      );
-
-      // Add the message to the inbox so it appears when user navigates to inbox
-      await MessageService.addProviderMessage(
-        provider!.id,
-        provider!.name,
-        'Hello! I would like to start a conversation with you.',
-      );
-
-      // Navigate to chat screen
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ChatScreen(message: message)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to start chat. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildAboutSection() {
-    return _buildSection(
-      'About',
-      Icons.person,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          const SizedBox(height: 16),
           Text(
-            provider!.bio,
-            style: const TextStyle(
-              fontSize: 16,
+            provider!.bio!,
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey[700],
               height: 1.5,
-              color: Colors.black87,
             ),
+            textAlign: TextAlign.left,
           ),
         ],
       ),
@@ -587,162 +428,714 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
   }
 
   Widget _buildQualificationsSection() {
-    return _buildSection(
-      'Qualifications',
-      Icons.school,
-      Column(
-        children: provider!.qualifications.map((qualification) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    qualification,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.4,
-                      color: Colors.black87,
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Qualifications',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...provider!.qualifications.map((qual) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      qual,
+                      style: TextStyle(fontSize: 15, color: Colors.grey[700]),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildCertificationsSection() {
-    return _buildSection(
-      'Certifications',
-      Icons.verified,
-      Column(
-        children: provider!.certifications.map((certification) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    certification,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.4,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
 
   Widget _buildServicesSection() {
-    return _buildSection(
-      'Services Offered',
-      Icons.medical_services,
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: provider!.services.map((service) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Text(
-              service,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.blue[800],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildAvailabilitySection() {
-    return _buildSection(
-      'Availability',
-      Icons.schedule,
-      Column(
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.access_time, size: 18, color: Colors.grey[600]),
+              Icon(Icons.medical_services, size: 24, color: Colors.black),
               const SizedBox(width: 8),
-              Text(
-                provider!.openingHours,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              const Text(
+                'Services Offered',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          if (provider!.servicesOffered.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.start,
+              children: provider!.servicesOffered.map((service) {
+                return Chip(
+                  label: Text(service),
+                  backgroundColor: Colors.blue[50],
+                  labelStyle: TextStyle(fontSize: 13, color: Colors.blue[800]),
+                );
+              }).toList(),
+            ),
+          if (provider!.servicesDescription != null &&
+              provider!.servicesDescription!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(
+              provider!.servicesDescription!,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[700],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.left,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvailabilityScheduleSection() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.schedule, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'Working Hours',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Days and Times List
+          ...provider!.workingDays.map((day) {
+            final dayHours = provider!.workingHours[day] ?? 'Not Available';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Day
+                  SizedBox(
+                    width: 100,
+                    child: Text(
+                      day,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Times
+                  Expanded(
+                    child: Text(
+                      dayHours,
+                      style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.star, size: 24, color: Colors.black),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Reviews',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _rateProvider,
+                    icon: Icon(Icons.edit, size: 16, color: Colors.blue[700]),
+                    label: Text(
+                      'Write Review',
+                      style: TextStyle(fontSize: 13, color: Colors.blue[700]),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.blue[300]!),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to all reviews
+                    },
+                    child: Text(
+                      'View all',
+                      style: TextStyle(fontSize: 13, color: Colors.blue[700]),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Rating Summary
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                provider!.rating.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < provider!.rating.floor()
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: Colors.amber,
+                        size: 20,
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${provider!.totalReviews} reviews',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Sample Reviews (you can fetch real reviews from ReviewService)
+          _buildReviewCard(
+            'SK',
+            'Sarah Kimani',
+            'Nov 12, 2025',
+            5,
+            'Excellent hospital with state-of-the-art facilities. The staff was very professional and caring. Highly recommend!',
+          ),
+          const SizedBox(height: 16),
+          _buildReviewCard(
+            'JM',
+            'James Mwangi',
+            'Nov 06, 2025',
+            4,
+            'Good hospital with modern equipment. The waiting time was reasonable and the doctors were knowledgeable.',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(
+    String initials,
+    String name,
+    String date,
+    int rating,
+    String comment,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.blue[100],
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      Text(
+                        date,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Row(
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 18,
+                  );
+                }),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           Text(
-            'Working Days:',
+            comment,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactInformationSection() {
+    final premises = provider!.premises;
+
+    // Get contact info from premises or user profile
+    final contactName = premises?.name ?? user?.name ?? 'Provider';
+    final contactPhone = premises?.phone ?? user?.phone ?? '';
+    final contactEmail = premises?.email ?? user?.email ?? '';
+    final contactAddress = premises != null
+        ? '${premises.address}, ${premises.city}, ${premises.country}'
+        : '';
+
+    // Don't show section if no contact info available
+    if (contactPhone.isEmpty && contactEmail.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.contacts, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'Key Contacts',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Contact Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  contactName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _getProviderTypeName(provider!.providerType),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                // Phone
+                if (contactPhone.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Icon(Icons.phone, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Text(
+                        contactPhone,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                // Email
+                if (contactEmail.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Icon(Icons.email, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          contactEmail,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (contactAddress.isNotEmpty) const SizedBox(height: 12),
+                ],
+                // Address
+                if (contactAddress.isNotEmpty) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 18,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          contactAddress,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getProviderTypeName(UserRole role) {
+    switch (role) {
+      case UserRole.doctor:
+        return 'Doctor';
+      case UserRole.nurse:
+        return 'Nurse';
+      case UserRole.therapist:
+        return 'Therapist';
+      case UserRole.nutritionist:
+        return 'Nutritionist';
+      case UserRole.homecare:
+        return 'Home Care Provider';
+      case UserRole.hospital:
+        return 'Hospital';
+      case UserRole.clinic:
+        return 'Clinic';
+      case UserRole.pharmacy:
+        return 'Pharmacy';
+      case UserRole.laboratory:
+        return 'Laboratory';
+      case UserRole.dental:
+        return 'Dental Clinic';
+      case UserRole.wellness:
+        return 'Wellness Center';
+      default:
+        return 'Healthcare Provider';
+    }
+  }
+
+  void _makePhoneCall(String phoneNumber) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Call Provider'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Would you like to call this number?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.phone, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Text(
+                    phoneNumber,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Calling $phoneNumber...'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Call'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.2),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Message Button
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _openChat,
+                icon: const Icon(Icons.message, size: 16),
+                label: const Text('Message', style: TextStyle(fontSize: 13)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Call Button
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  if (provider!.premises != null &&
+                      provider!.premises!.phone.isNotEmpty) {
+                    _makePhoneCall(provider!.premises!.phone);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Phone number not available'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.phone, size: 16),
+                label: const Text('Call', style: TextStyle(fontSize: 13)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Book Appointment Button
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _bookAppointment,
+                icon: const Icon(Icons.calendar_today, size: 16),
+                label: const Text(
+                  'Book Appointment',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsuranceSection() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'Insurance Accepted',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: provider!.workingDays.map((day) {
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.start,
+            children: provider!.insuranceAccepted.map((insurance) {
               return Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: 16,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green[200]!),
+                  color: Colors.teal[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.teal[200]!),
                 ),
                 child: Text(
-                  day,
+                  insurance,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.green[800],
+                    fontSize: 14,
+                    color: Colors.teal[800],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -754,301 +1147,22 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
     );
   }
 
-  Widget _buildReviewsSection() {
-    final reviews = ReviewService.getReviewsByProvider(provider!.id);
-    final providerRating = ReviewService.getProviderRating(provider!.id);
-
+  Widget _buildCertificationsSection() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.star, size: 22, color: Colors.black),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Reviews',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RateAnyProviderScreen(
-                            providerId: provider!.id,
-                            providerName: provider!.name,
-                            providerType: ProviderType.doctor,
-                            description: 'Rate this provider',
-                          ),
-                        ),
-                      );
-                      // Refresh provider data when returning
-                      _loadProvider();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.edit, size: 14, color: Colors.blue[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Write Review',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (reviews.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProviderReviewsListScreen(
-                              providerId: provider!.id,
-                              providerName: provider!.name,
-                              providerType: ProviderType.doctor,
-                            ),
-                          ),
-                        );
-                        // Refresh provider data when returning
-                        _loadProvider();
-                      },
-                      child: Text(
-                        'View all',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.blue[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (reviews.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.rate_review_outlined,
-                      size: 48,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No reviews yet',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Be the first to leave a review!',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else ...[
-            // Rating summary
-            Row(
-              children: [
-                Text(
-                  providerRating.averageRating.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Icon(
-                          index < providerRating.averageRating.round()
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber[600],
-                          size: 20,
-                        );
-                      }),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${providerRating.totalReviews} reviews',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Recent reviews (show up to 2)
-            ...reviews.take(2).map((review) => _buildReviewCard(review)),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewCard(Review review) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.blue[100],
-                child: Text(
-                  review.patientName.split(' ').map((e) => e[0]).take(2).join(),
-                  style: TextStyle(
-                    color: Colors.blue[800],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.patientName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      DateFormat('MMM dd, yyyy').format(review.createdAt),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: List.generate(5, (index) {
-                  return Icon(
-                    index < review.rating ? Icons.star : Icons.star_border,
-                    color: Colors.amber[600],
-                    size: 14,
-                  );
-                }),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            review.comment,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-              height: 1.4,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, IconData icon, Widget content) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 22, color: Colors.black),
+              Icon(Icons.verified, size: 24, color: Colors.black),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
+              const Text(
+                'Certifications & Accreditations',
+                style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
@@ -1056,60 +1170,134 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          content,
+          ...provider!.certifications.map((certification) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.orange[700], size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      certification,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.orange[900],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildBookAppointmentButton() {
+  Widget _buildPaymentMethodsSection() {
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BookAppointmentScreen(provider: provider!),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Colors.black, width: 1),
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payment, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'Payment Methods',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
-        ),
-        child: const Text(
-          'Book Appointment',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.start,
+            children: provider!.paymentMethods.map((method) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check, color: Colors.green[700], size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      method,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.green[800],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
 
-  ImageProvider? _getProviderProfileImage() {
-    if (provider?.profileImageUrl != null &&
-        provider!.profileImageUrl.isNotEmpty &&
-        provider!.profileImageUrl != 'https://via.placeholder.com/200') {
-      if (provider!.profileImageUrl.startsWith('/')) {
-        // Local file path
-        return FileImage(File(provider!.profileImageUrl));
-      } else {
-        // Network URL
-        return NetworkImage(provider!.profileImageUrl);
-      }
-    }
-    return null;
+  void _openChat() {
+    // Create a message object to open chat with provider
+    final message = Message(
+      id: 'provider_${provider!.id}',
+      senderId: provider!.id,
+      senderName: user!.name,
+      content: 'Start a conversation with ${user!.name}',
+      timestamp: DateTime.now(),
+      type: MessageType.text,
+      category: MessageCategory.healthcareProvider,
+      isRead: true,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ChatScreen(message: message)),
+    );
   }
 
-  bool _shouldShowInitials() {
-    return provider?.profileImageUrl == null ||
-        provider!.profileImageUrl.isEmpty ||
-        provider!.profileImageUrl == 'https://via.placeholder.com/200';
+  void _bookAppointment() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            BookProviderAppointmentScreen(provider: provider!),
+      ),
+    );
+  }
+
+  void _rateProvider() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RateAnyProviderScreen(provider: provider!),
+      ),
+    );
   }
 }

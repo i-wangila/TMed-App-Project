@@ -211,7 +211,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
         Text(
           'Payment Method',
           style: TextStyle(
-            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
@@ -296,7 +296,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     style: TextStyle(
                       fontSize: ResponsiveUtils.getResponsiveFontSize(
                         context,
-                        16,
+                        14,
                       ),
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -307,7 +307,7 @@ class _TopUpScreenState extends State<TopUpScreen> {
                     style: TextStyle(
                       fontSize: ResponsiveUtils.getResponsiveFontSize(
                         context,
-                        14,
+                        12,
                       ),
                       color: Colors.grey[600],
                     ),
@@ -330,12 +330,13 @@ class _TopUpScreenState extends State<TopUpScreen> {
   Widget _buildTopUpButton() {
     return SizedBox(
       width: double.infinity,
-      height: ResponsiveUtils.isSmallScreen(context) ? 48 : 56,
+      height: ResponsiveUtils.isSmallScreen(context) ? 44 : 48,
       child: ElevatedButton(
         onPressed: _isProcessing ? null : _processTopUp,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          side: BorderSide(color: Colors.grey[300]!),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -346,14 +347,14 @@ class _TopUpScreenState extends State<TopUpScreen> {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                 ),
               )
             : Text(
                 'Top Up Wallet',
                 style: TextStyle(
-                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
-                  fontWeight: FontWeight.bold,
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
       ),

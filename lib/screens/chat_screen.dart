@@ -8,6 +8,8 @@ import 'dart:io';
 import '../models/message.dart';
 import '../services/chat_service.dart';
 import '../services/call_service.dart';
+import '../services/message_service.dart';
+import '../services/user_service.dart';
 import '../utils/responsive_utils.dart';
 import 'call_screen.dart';
 
@@ -54,6 +56,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _chatRoomId,
       widget.message.content,
       widget.message.senderName,
+      widget.message.senderId,
       widget.message.timestamp,
     );
 
@@ -146,10 +149,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildChatBubble(ChatMessage message) {
+    final currentUser = UserService.currentUser;
+    final isMyMessage =
+        currentUser != null && message.senderId == currentUser.id;
+
     return Align(
-      alignment: message.isFromUser
-          ? Alignment.centerRight
-          : Alignment.centerLeft,
+      alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.only(
           bottom: ResponsiveUtils.getResponsiveSpacing(context, 12),
@@ -162,9 +167,9 @@ class _ChatScreenState extends State<ChatScreen> {
           maxWidth: ResponsiveUtils.getScreenWidth(context) * 0.8,
         ),
         decoration: BoxDecoration(
-          color: message.isFromUser ? Colors.white : Colors.grey[100],
+          color: isMyMessage ? Colors.white : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
-          border: message.isFromUser
+          border: isMyMessage
               ? Border.all(color: Colors.black, width: 1)
               : null,
         ),
@@ -446,16 +451,38 @@ class _ChatScreenState extends State<ChatScreen> {
       final messageText = _messageController.text.trim();
       _messageController.clear();
 
-      // Add user message
+      // Add user message (from current user - could be provider or patient)
+      final currentUser = UserService.currentUser;
       final userMessage = ChatMessage(
         text: messageText,
         isFromUser: true,
+        senderId: currentUser?.id ?? '',
         timestamp: DateTime.now(),
         senderName: 'You',
         messageType: ChatMessageType.text,
       );
 
       await ChatService.addMessage(_chatRoomId, userMessage);
+
+      // Update or create conversation in provider's inbox
+      if (currentUser != null) {
+        await _updateProviderInboxConversation(
+          currentUser.id,
+          currentUser.name,
+          messageText,
+        );
+      }
+
+      // Show sent confirmation
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Message sent'),
+            duration: Duration(seconds: 1),
+            backgroundColor: Colors.black,
+          ),
+        );
+      }
     }
   }
 
@@ -671,9 +698,11 @@ class _ChatScreenState extends State<ChatScreen> {
   ) async {
     try {
       // Create a message with file attachment
+      final currentUser = UserService.currentUser;
       final fileMessage = ChatMessage(
         text: fileName, // Use filename as message text
         isFromUser: true,
+        senderId: currentUser?.id ?? '',
         timestamp: DateTime.now(),
         senderName: 'You',
         messageType: messageType,
@@ -681,6 +710,18 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       await ChatService.addMessage(_chatRoomId, fileMessage);
+
+      // Update conversation in provider's inbox
+      if (currentUser != null) {
+        final messageContent = messageType == ChatMessageType.image
+            ? '📷 Sent an image: $fileName'
+            : '📎 Sent a file: $fileName';
+        await _updateProviderInboxConversation(
+          currentUser.id,
+          currentUser.name,
+          messageContent,
+        );
+      }
 
       _showSuccessSnackBar(
         '${messageType == ChatMessageType.image ? 'Image' : 'Document'} sent successfully',
@@ -752,6 +793,26 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Update or create conversation entry in provider's inbox
+  Future<void> _updateProviderInboxConversation(
+    String senderId,
+    String senderName,
+    String latestMessage,
+  ) async {
+    // Create a consistent conversation ID using sorted IDs to ensure same conversation
+    // regardless of who initiates the chat
+    final ids = [senderId, widget.message.senderId]..sort();
+    final conversationId = 'conversation_${ids[0]}_${ids[1]}';
+
+    // Update or create the conversation in MessageService
+    await MessageService.updateOrCreateConversation(
+      conversationId: conversationId,
+      senderId: senderId,
+      senderName: senderName,
+      content: latestMessage,
     );
   }
 

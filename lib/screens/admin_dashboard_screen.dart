@@ -157,7 +157,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _stats!.pendingProviders.toString(),
           Icons.pending_actions,
           Colors.orange,
-          onTap: () => Navigator.pushNamed(context, '/admin/pending-providers'),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/admin/pending-providers');
+            // Refresh dashboard when returning
+            _loadDashboardData();
+          },
         ),
         _buildStatCard(
           'Active Providers',
@@ -244,6 +248,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildQuickActions() {
     final pendingCount = _stats?.pendingProviders ?? 0;
+    final approvedCount = _stats?.approvedProviders ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +263,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Icons.pending_actions,
           Colors.orange,
           badge: pendingCount > 0 ? pendingCount.toString() : null,
-          onTap: () => Navigator.pushNamed(context, '/admin/pending-providers'),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/admin/pending-providers');
+            // Refresh dashboard when returning
+            _loadDashboardData();
+          },
+        ),
+        const SizedBox(height: 8),
+        _buildActionButton(
+          'Approved Providers',
+          Icons.check_circle,
+          Colors.green,
+          badge: approvedCount > 0 ? approvedCount.toString() : null,
+          onTap: () =>
+              Navigator.pushNamed(context, '/admin/approved-providers'),
         ),
         const SizedBox(height: 8),
         _buildActionButton(

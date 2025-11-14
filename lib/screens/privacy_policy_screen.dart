@@ -19,12 +19,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
           children: [
             const Text(
               'Klinate Privacy Policy',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Effective Date: January 1, ${DateTime.now().year}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 24),
             _buildSection(
@@ -37,15 +37,23 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ),
             _buildSection(
               'Data Security',
-              'We implement industry-standard security measures including encryption, secure servers, and access controls to protect your medical information.',
+              'We implement industry-standard security measures including encryption, secure servers, two-factor authentication, biometric login, and access controls to protect your medical information. We monitor active sessions and maintain login history for security purposes.',
             ),
             _buildSection(
               'Information Sharing',
-              'We do not sell your personal information. We may share information with healthcare providers involved in your care and as required by law.',
+              'We do not sell your personal information. We may share information with healthcare providers involved in your care and as required by law. You can control who can view your profile information through privacy settings.',
             ),
             _buildSection(
               'Your Rights',
-              'You have the right to access, update, or delete your personal information. You can also request a copy of your medical records.',
+              'You have the right to access, update, or delete your personal information. You can request a copy of your medical records and personal data at any time. You can also control your privacy settings, manage active sessions, and view your login history.',
+            ),
+            _buildSection(
+              'Account Deactivation and Deletion',
+              'You can deactivate your account temporarily (reactivate within 3 months) or request permanent deletion (30-day grace period). During deactivation or deletion grace periods, you can reactivate your account by logging in. After the grace period expires, all your data is permanently deleted and cannot be recovered.',
+            ),
+            _buildSection(
+              'Data Retention',
+              'We retain your data while your account is active and during grace periods. Deactivated accounts are deleted after 3 months of inactivity. Deletion requests result in permanent data removal after 30 days. You can download your data before deletion.',
             ),
             _buildSection(
               'Cookies and Tracking',
@@ -72,7 +80,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 children: [
                   const Text(
                     'Contact Us',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -99,10 +107,10 @@ class PrivacyPolicyScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(content, style: const TextStyle(fontSize: 14, height: 1.5)),
+          Text(content, style: const TextStyle(fontSize: 12, height: 1.5)),
         ],
       ),
     );

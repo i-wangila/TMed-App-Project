@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/message_service.dart';
+import '../services/user_service.dart';
 import '../models/message.dart';
 import '../utils/responsive_utils.dart';
 import 'chat_screen.dart';
@@ -35,7 +36,17 @@ class _InboxScreenState extends State<InboxScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = MessageService.getAllMessages();
+    final allMessages = MessageService.getAllMessages();
+
+    // Filter messages based on user role
+    // Providers should not see messages from other providers in patient inbox
+    final currentUser = UserService.currentUser;
+    final messages = currentUser?.isProvider == true
+        ? allMessages.where((message) {
+            // For providers, only show system notifications (not from other providers)
+            return message.isSystemNotification;
+          }).toList()
+        : allMessages; // Patients see all messages
 
     return Scaffold(
       body: SafeArea(

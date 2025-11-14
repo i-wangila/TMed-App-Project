@@ -12,6 +12,25 @@ enum DocumentType {
   professionalCertification,
   validId,
   insurance,
+  nursingLicense,
+  professionalLicense,
+  certification,
+  nutritionCertification,
+  caregiverCertification,
+  backgroundCheck,
+  hospitalLicense,
+  accreditation,
+  businessRegistration,
+  clinicLicense,
+  medicalPermits,
+  pharmacyLicense,
+  pharmacistLicense,
+  laboratoryLicense,
+  qualityCertification,
+  dentalLicense,
+  practiceLicense,
+  businessLicense,
+  healthPermits,
 
   other,
 }
@@ -92,6 +111,44 @@ class Document {
         return 'Valid ID';
       case DocumentType.insurance:
         return 'Insurance Certificate';
+      case DocumentType.nursingLicense:
+        return 'Nursing License';
+      case DocumentType.professionalLicense:
+        return 'Professional License';
+      case DocumentType.certification:
+        return 'Certification';
+      case DocumentType.nutritionCertification:
+        return 'Nutrition Certification';
+      case DocumentType.caregiverCertification:
+        return 'Caregiver Certification';
+      case DocumentType.backgroundCheck:
+        return 'Background Check';
+      case DocumentType.hospitalLicense:
+        return 'Hospital License';
+      case DocumentType.accreditation:
+        return 'Accreditation';
+      case DocumentType.businessRegistration:
+        return 'Business Registration';
+      case DocumentType.clinicLicense:
+        return 'Clinic License';
+      case DocumentType.medicalPermits:
+        return 'Medical Permits';
+      case DocumentType.pharmacyLicense:
+        return 'Pharmacy License';
+      case DocumentType.pharmacistLicense:
+        return 'Pharmacist License';
+      case DocumentType.laboratoryLicense:
+        return 'Laboratory License';
+      case DocumentType.qualityCertification:
+        return 'Quality Certification';
+      case DocumentType.dentalLicense:
+        return 'Dental License';
+      case DocumentType.practiceLicense:
+        return 'Practice License';
+      case DocumentType.businessLicense:
+        return 'Business License';
+      case DocumentType.healthPermits:
+        return 'Health Permits';
       case DocumentType.other:
         return 'Other Document';
     }

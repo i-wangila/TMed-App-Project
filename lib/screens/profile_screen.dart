@@ -13,9 +13,11 @@ import 'about_screen.dart';
 import 'document_management_screen.dart';
 import '../utils/responsive_utils.dart';
 import '../services/user_service.dart';
-import '../services/admin_service.dart';
 import '../services/healthcare_provider_service.dart';
 import '../services/healthcare_facility_service.dart';
+import '../services/provider_service.dart';
+import '../models/provider_profile.dart';
+import '../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -68,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(
             provider.specialization,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               color: Colors.blue[600],
               fontWeight: FontWeight.w600,
             ),
@@ -77,22 +79,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 8),
             Text(
               provider.bio,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               textAlign: TextAlign.center,
-              maxLines: 3,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.star, color: Colors.amber, size: 16),
+              Icon(Icons.star, color: Colors.amber, size: 14),
               const SizedBox(width: 4),
               Text(
                 '${provider.rating}',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[700],
                 ),
@@ -100,21 +102,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(width: 4),
               Text(
                 '(${provider.reviewCount} reviews)',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: provider.isAvailable
                       ? Colors.green[100]
                       : Colors.red[100],
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   provider.isAvailable ? 'Available' : 'Unavailable',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: provider.isAvailable
                         ? Colors.green[700]
@@ -129,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       return Text(
         'Patient',
-        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
       );
     }
   }
@@ -152,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Profile',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 32,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -160,13 +162,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const [], // Explicitly remove any actions including search icon
       ),
       body: SingleChildScrollView(
-        padding: ResponsiveUtils.getResponsivePadding(context),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             _buildProfileCard(context),
-            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
-            _buildBecomeProviderCard(context),
-            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
+
+            const SizedBox(height: 12),
+            // Show Provider Account card if user has approved provider profile
+            if (_hasApprovedProviderAccount()) ...[
+              _buildProviderAccountCard(context),
+              const SizedBox(height: 12),
+            ],
+            // Only show "Become a Provider" if user doesn't have approved provider account
+            if (!_hasApprovedProviderAccount()) ...[
+              _buildBecomeProviderCard(context),
+              const SizedBox(height: 12),
+            ],
             _buildMenuSection(context),
           ],
         ),
@@ -178,10 +189,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ResponsiveUtils.flexibleContainer(
       context: context,
       child: Container(
-        padding: ResponsiveUtils.getResponsivePadding(context),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withValues(alpha: 0.1),
@@ -199,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   builder: (context) {
                     final profileImage = _getProfileImage();
                     return CircleAvatar(
-                      radius: ResponsiveUtils.isSmallScreen(context) ? 40 : 50,
+                      radius: 24,
                       backgroundColor: Colors.grey[200],
                       backgroundImage: profileImage,
                       onBackgroundImageError: profileImage != null
@@ -208,11 +219,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: !_hasCustomImage
                           ? Text(
                               _getInitials(),
-                              style: TextStyle(
-                                fontSize: ResponsiveUtils.getResponsiveFontSize(
-                                  context,
-                                  40,
-                                ),
+                              style: const TextStyle(
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -241,11 +249,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _showImagePickerDialog();
                       },
                       icon: const Icon(Icons.camera_alt, color: Colors.black),
-                      iconSize: 20,
-                      padding: const EdgeInsets.all(8),
+                      iconSize: 16,
+                      padding: const EdgeInsets.all(6),
                       constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
+                        minWidth: 32,
+                        minHeight: 32,
                       ),
                       tooltip: 'Change profile picture',
                     ),
@@ -253,20 +261,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 16)),
+            const SizedBox(height: 6),
             ResponsiveUtils.safeText(
               UserService.currentUser?.name ?? 'Isaac',
-              style: TextStyle(
-                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 28),
-                fontWeight: FontWeight.bold,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
             ),
-            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 4)),
+            const SizedBox(height: 3),
             _buildUserTypeAndBio(),
-            SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -286,9 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.black),
-                  padding: EdgeInsets.symmetric(
-                    vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -299,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.black,
                     fontSize: ResponsiveUtils.getResponsiveFontSize(
                       context,
-                      16,
+                      14,
                     ),
                     fontWeight: FontWeight.w600,
                   ),
@@ -582,14 +588,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBecomeProviderCard(BuildContext context) {
+  Widget _buildProviderDashboardMenuItem(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.blue[400]!, Colors.blue[600]!],
+        ),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.blue.withValues(alpha: 0.3),
             spreadRadius: 1,
             blurRadius: 6,
             offset: const Offset(0, 2),
@@ -600,30 +611,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.dashboard, color: Colors.white, size: 24),
+        ),
+        title: const Text(
+          'Provider Dashboard',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        subtitle: const Text(
+          'Manage patients, appointments and analytics',
+          style: TextStyle(fontSize: 14, color: Colors.white70),
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Colors.white,
+        ),
+        onTap: () {
+          Navigator.pushNamed(context, '/provider/dashboard');
+        },
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
+    );
+  }
+
+  Widget _buildBecomeProviderCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: ListTile(
+        dense: true,
+        visualDensity: const VisualDensity(horizontal: 0, vertical: -4),
+        leading: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(4),
           ),
           child: Icon(
             Icons.medical_services,
-            color: Colors.grey[700],
-            size: 24,
+            color: Colors.blue[700],
+            size: 16,
           ),
         ),
         title: const Text(
           'Become a Healthcare Provider',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
         ),
-        subtitle: Text(
-          'Join our network of healthcare professionals',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          size: 16,
+          size: 10,
           color: Colors.grey[400],
         ),
         onTap: () {
@@ -634,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           );
         },
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
       ),
     );
   }
@@ -655,6 +712,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
+          // Show Provider Dashboard card if user is an approved provider
+          if (_isHealthcareProvider()) ...[
+            _buildProviderDashboardMenuItem(context),
+            _buildDivider(),
+          ],
+          _buildMenuItem(
+            icon: Icons.account_balance_wallet,
+            title: 'Wallet',
+            subtitle: 'Manage your payments and transactions',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const WalletScreen()),
+              );
+            },
+          ),
+          _buildDivider(),
           _buildMenuItem(
             icon: Icons.history,
             title: 'Past Appointments',
@@ -692,7 +766,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           _buildDivider(),
-          // Provider-only menu item
+          // Provider-only menu items
           if (_isHealthcareProvider()) ...[
             _buildMenuItem(
               icon: Icons.edit_note,
@@ -702,17 +776,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             _buildDivider(),
           ],
-          _buildMenuItem(
-            icon: Icons.account_balance_wallet,
-            title: 'Wallet',
-            subtitle: 'Manage your payments and transactions',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const WalletScreen()),
-              );
-            },
-          ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.help_outline,
@@ -781,32 +844,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return ListTile(
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
           color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(icon, color: Colors.grey[700], size: 24),
+        child: Icon(icon, color: Colors.grey[700], size: 18),
       ),
       title: Text(
         title,
         style: const TextStyle(
-          fontSize: 16,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: Colors.black,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
       ),
       trailing: Icon(
         Icons.arrow_forward_ios,
-        size: 16,
+        size: 12,
         color: Colors.grey[400],
       ),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      dense: true,
+      visualDensity: VisualDensity.compact,
     );
   }
 
@@ -819,8 +884,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAppInfoCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -891,7 +956,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           // App Information
           _buildInfoRow(
@@ -899,19 +964,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: 'Version',
             value: '1.0.0',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildInfoRow(
             icon: Icons.person_outline,
             label: 'Developer',
             value: 'Isaac Wangila',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildInfoRow(
             icon: Icons.build_outlined,
             label: 'Build',
             value: 'Release 2025.1',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildInfoRow(
             icon: Icons.flutter_dash,
             label: 'Platform',
@@ -987,7 +1052,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Action buttons
           Row(
@@ -1168,7 +1233,281 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isHealthcareProvider() {
     final user = UserService.currentUser;
-    return user?.isProvider ?? false;
+    if (user == null) return false;
+
+    // Check if user has any approved provider profiles
+    final providers = ProviderService.getProvidersByUserId(user.id);
+    return providers.any((p) => p.status == ProviderStatus.approved);
+  }
+
+  bool _hasApprovedProviderAccount() {
+    final user = UserService.currentUser;
+    if (user == null) return false;
+
+    final providers = ProviderService.getProvidersByUserId(user.id);
+    return providers.any((p) => p.status == ProviderStatus.approved);
+  }
+
+  String _getProviderTypeName(UserRole role) {
+    switch (role) {
+      case UserRole.doctor:
+        return 'Doctor';
+      case UserRole.nurse:
+        return 'Nurse';
+      case UserRole.therapist:
+        return 'Therapist';
+      case UserRole.nutritionist:
+        return 'Nutritionist';
+      case UserRole.homecare:
+        return 'Home Care Provider';
+      case UserRole.hospital:
+        return 'Hospital';
+      case UserRole.clinic:
+        return 'Clinic';
+      case UserRole.pharmacy:
+        return 'Pharmacy';
+      case UserRole.laboratory:
+        return 'Laboratory';
+      case UserRole.dental:
+        return 'Dental Clinic';
+      case UserRole.wellness:
+        return 'Wellness Center';
+      default:
+        return 'Healthcare Provider';
+    }
+  }
+
+  ProviderProfile? _getApprovedProviderProfile() {
+    final user = UserService.currentUser;
+    if (user == null) return null;
+
+    final providers = ProviderService.getProvidersByUserId(user.id);
+    final approvedProviders = providers
+        .where((p) => p.status == ProviderStatus.approved)
+        .toList();
+
+    return approvedProviders.isNotEmpty ? approvedProviders.first : null;
+  }
+
+  Widget _buildProviderAccountCard(BuildContext context) {
+    final provider = _getApprovedProviderProfile();
+    if (provider == null) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.blue[400]!, Colors.blue[600]!],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.3),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(context, '/provider/dashboard');
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.medical_services,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Provider Account',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _getProviderTypeName(provider.providerType),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green[400],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Approved',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              provider.premises?.name ??
+                                  provider.specialization ??
+                                  'Healthcare Provider',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              provider.servicesDescription != null &&
+                                      provider.servicesDescription!.length > 60
+                                  ? '${provider.servicesDescription!.substring(0, 60)}...'
+                                  : provider.servicesDescription ??
+                                        'Providing quality healthcare services',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildProviderStat(
+                        icon: Icons.people,
+                        label: 'Patients',
+                        value: '0',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildProviderStat(
+                        icon: Icons.calendar_today,
+                        label: 'Appointments',
+                        value: '0',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildProviderStat(
+                        icon: Icons.star,
+                        label: 'Rating',
+                        value: '5.0',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProviderStat({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _editProviderProfile() async {

@@ -323,11 +323,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             children: [
               _buildDetailRow('Email', user.email),
               _buildDetailRow('Phone', user.phone),
-              _buildDetailRow('Gender', user.gender ?? 'Not specified'),
-              _buildDetailRow(
-                'Date of Birth',
-                user.dateOfBirth?.toString().split(' ')[0] ?? 'Not provided',
-              ),
+              _buildDetailRow('Gender', user.gender),
+              _buildDetailRow('Date of Birth', user.dateOfBirth.split(' ')[0]),
               _buildDetailRow(
                 'Roles',
                 user.roles.map((r) => r.displayName).join(', '),
@@ -378,21 +375,43 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Suspend User'),
-        content: Text('Are you sure you want to suspend ${user.name}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to suspend ${user.name}?'),
+            const SizedBox(height: 12),
+            const Text(
+              'Suspended users will:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const Text('• Lose access to their account'),
+            const Text('• Be unable to book appointments'),
+            const Text('• Keep their data for reactivation'),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${user.name} has been suspended'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
+              final success = await UserService.suspendUser(user.id);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? '${user.name} has been suspended'
+                          : 'Failed to suspend user',
+                    ),
+                    backgroundColor: success ? Colors.orange : Colors.red,
+                  ),
+                );
+                if (success) _loadUsers();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,
@@ -410,8 +429,23 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete User'),
-        content: Text(
-          'Are you sure you want to permanently delete ${user.name}? This action cannot be undone.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to permanently delete ${user.name}?',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This action will:',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+            ),
+            const Text('• Permanently delete all user data'),
+            const Text('• Remove all appointments'),
+            const Text('• Cannot be undone'),
+          ],
         ),
         actions: [
           TextButton(
@@ -419,14 +453,22 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${user.name} has been deleted'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              final success = await UserService.deleteUser(user.id);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? '${user.name} has been deleted'
+                          : 'Failed to delete user',
+                    ),
+                    backgroundColor: success ? Colors.red : Colors.orange,
+                  ),
+                );
+                if (success) _loadUsers();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,

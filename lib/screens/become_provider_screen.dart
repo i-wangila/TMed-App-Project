@@ -244,14 +244,15 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.black, width: 2),
               ),
               child: Center(
                 child: Text(
                   number,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -391,19 +392,21 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          side: const BorderSide(color: Colors.black, width: 2),
+          padding: const EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(30),
           ),
+          elevation: 0,
         ),
         child: const Text(
           'Get Started',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
       ),

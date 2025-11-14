@@ -39,6 +39,7 @@ class SystemStats {
   final int totalPatients;
   final int totalProviders;
   final int activeProviders;
+  final int approvedProviders;
   final int pendingProviders;
   final int rejectedProviders;
   final int suspendedProviders;
@@ -55,6 +56,7 @@ class SystemStats {
     this.totalPatients = 0,
     this.totalProviders = 0,
     this.activeProviders = 0,
+    this.approvedProviders = 0,
     this.pendingProviders = 0,
     this.rejectedProviders = 0,
     this.suspendedProviders = 0,
@@ -87,6 +89,7 @@ class SystemStats {
       'totalPatients': totalPatients,
       'totalProviders': totalProviders,
       'activeProviders': activeProviders,
+      'approvedProviders': approvedProviders,
       'pendingProviders': pendingProviders,
       'rejectedProviders': rejectedProviders,
       'suspendedProviders': suspendedProviders,
@@ -106,6 +109,7 @@ class SystemStats {
       totalPatients: json['totalPatients'] ?? 0,
       totalProviders: json['totalProviders'] ?? 0,
       activeProviders: json['activeProviders'] ?? 0,
+      approvedProviders: json['approvedProviders'] ?? 0,
       pendingProviders: json['pendingProviders'] ?? 0,
       rejectedProviders: json['rejectedProviders'] ?? 0,
       suspendedProviders: json['suspendedProviders'] ?? 0,

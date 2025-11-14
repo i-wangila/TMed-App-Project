@@ -5,6 +5,7 @@ import '../models/healthcare_provider.dart';
 import '../models/appointment.dart';
 import '../services/provider_availability_service.dart';
 import '../services/appointment_service.dart';
+import '../services/user_service.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   final HealthcareProvider provider;
@@ -44,6 +45,60 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Prevent providers from booking appointments for themselves
+    final currentUser = UserService.currentUser;
+    if (currentUser?.isProvider == true) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Book Appointment'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.block, size: 80, color: Colors.grey[400]),
+                const SizedBox(height: 24),
+                const Text(
+                  'Providers Cannot Book Appointments',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'As a healthcare provider, you cannot book appointments for yourself. This feature is only available for patients.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    side: const BorderSide(color: Colors.black, width: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Book Appointment'),

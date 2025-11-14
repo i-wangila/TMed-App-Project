@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import '../models/provider_profile.dart';
 import '../models/user_profile.dart';
 import '../models/document.dart';
+import '../models/message.dart';
 import 'provider_service.dart';
 import 'document_service.dart';
 import 'audit_service.dart';
 import 'user_service.dart';
+import 'message_service.dart';
 
 class ApprovalService {
   // Approve provider
@@ -46,6 +48,40 @@ class ApprovalService {
 
         // Log the approval action
         await AuditService.logProviderApproval(adminId, providerId);
+
+        // Send approval notification to provider
+        await MessageService.addSystemNotification(
+          '🎉 Congratulations! Your Provider Account Has Been Approved!\n\n'
+          'Welcome to Klinate Healthcare Network! Your application has been approved and you can now offer healthcare services online.\n\n'
+          '✨ Your Provider Features:\n\n'
+          '📊 Provider Dashboard\n'
+          '• View your performance metrics and statistics\n'
+          '• Track appointments and patient interactions\n'
+          '• Monitor your ratings and reviews\n\n'
+          '📅 Appointment Management\n'
+          '• Receive and manage patient appointments\n'
+          '• Set your availability schedule\n'
+          '• Accept or decline appointment requests\n\n'
+          '👥 Patient Management\n'
+          '• View your patient list\n'
+          '• Access patient details and history\n'
+          '• Communicate directly with patients\n\n'
+          '💬 Messaging & Communication\n'
+          '• Dedicated provider inbox\n'
+          '• Real-time chat with patients\n'
+          '• Respond to appointment requests\n\n'
+          '📈 Analytics & Reports\n'
+          '• Track your performance metrics\n'
+          '• View appointment statistics\n'
+          '• Monitor patient satisfaction\n\n'
+          '⚙️ Account Management\n'
+          '• Update your profile and services\n'
+          '• Manage your availability\n'
+          '• Control notification preferences\n\n'
+          'To get started, switch to your Provider Dashboard using the role switcher in the navigation bar.\n\n'
+          'Thank you for joining Klinate! We look forward to serving patients together.',
+          MessageType.system,
+        );
 
         if (kDebugMode) {
           print('Provider approved: $providerId by admin: $adminId');
@@ -103,6 +139,16 @@ class ApprovalService {
 
         // Log the rejection action with reason
         await AuditService.logProviderRejection(adminId, providerId, reason);
+
+        // Send rejection notification to provider
+        await MessageService.addSystemNotification(
+          '❌ Application Status Update\n\n'
+          'We regret to inform you that your application to provide healthcare services on Klinate has not been approved at this time.\n\n'
+          'Reason: $reason\n\n'
+          'If you believe this was an error or would like to reapply with additional information, please contact our support team.\n\n'
+          'Thank you for your interest in joining Klinate.',
+          MessageType.system,
+        );
 
         if (kDebugMode) {
           print('Provider rejected: $providerId by admin: $adminId');

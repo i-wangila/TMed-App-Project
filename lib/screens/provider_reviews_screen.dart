@@ -622,8 +622,11 @@ class _ProviderReviewsScreenState extends State<ProviderReviewsScreen> {
           child: ElevatedButton(
             onPressed: canSubmit && !_isSubmitting ? _submitReview : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: canSubmit ? Colors.black : Colors.grey[300],
-              foregroundColor: canSubmit ? Colors.white : Colors.grey[600],
+              backgroundColor: canSubmit ? Colors.white : Colors.grey[300],
+              foregroundColor: canSubmit ? Colors.black : Colors.grey[600],
+              side: canSubmit
+                  ? const BorderSide(color: Colors.black, width: 1)
+                  : null,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

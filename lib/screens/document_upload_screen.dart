@@ -605,13 +605,35 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
       case DocumentType.vaccinationRecord:
         return Icons.vaccines;
       case DocumentType.medicalLicense:
+      case DocumentType.nursingLicense:
+      case DocumentType.professionalLicense:
+      case DocumentType.hospitalLicense:
+      case DocumentType.clinicLicense:
+      case DocumentType.pharmacyLicense:
+      case DocumentType.pharmacistLicense:
+      case DocumentType.laboratoryLicense:
+      case DocumentType.dentalLicense:
+      case DocumentType.practiceLicense:
+      case DocumentType.businessLicense:
         return Icons.medical_services;
       case DocumentType.professionalCertification:
+      case DocumentType.certification:
+      case DocumentType.nutritionCertification:
+      case DocumentType.caregiverCertification:
+      case DocumentType.accreditation:
+      case DocumentType.qualityCertification:
         return Icons.verified;
       case DocumentType.validId:
         return Icons.badge;
       case DocumentType.insurance:
         return Icons.security;
+      case DocumentType.backgroundCheck:
+        return Icons.verified_user;
+      case DocumentType.businessRegistration:
+        return Icons.business;
+      case DocumentType.medicalPermits:
+      case DocumentType.healthPermits:
+        return Icons.assignment;
       case DocumentType.other:
         return Icons.description;
     }
@@ -633,12 +655,50 @@ class _DocumentUploadScreenState extends State<DocumentUploadScreen> {
         return 'Vaccination certificates';
       case DocumentType.medicalLicense:
         return 'Upload your medical license for verification';
+      case DocumentType.nursingLicense:
+        return 'Upload your nursing license for verification';
+      case DocumentType.professionalLicense:
+        return 'Upload your professional license for verification';
       case DocumentType.professionalCertification:
         return 'Upload professional certifications';
+      case DocumentType.certification:
+        return 'Upload relevant certifications';
+      case DocumentType.nutritionCertification:
+        return 'Upload your nutrition certification';
+      case DocumentType.caregiverCertification:
+        return 'Upload your caregiver certification';
+      case DocumentType.backgroundCheck:
+        return 'Upload background check document';
       case DocumentType.validId:
         return 'Upload a valid government-issued ID';
       case DocumentType.insurance:
         return 'Upload insurance certificate';
+      case DocumentType.hospitalLicense:
+        return 'Upload hospital operating license';
+      case DocumentType.accreditation:
+        return 'Upload accreditation certificate';
+      case DocumentType.businessRegistration:
+        return 'Upload business registration documents';
+      case DocumentType.clinicLicense:
+        return 'Upload clinic operating license';
+      case DocumentType.medicalPermits:
+        return 'Upload medical permits';
+      case DocumentType.pharmacyLicense:
+        return 'Upload pharmacy license';
+      case DocumentType.pharmacistLicense:
+        return 'Upload pharmacist license';
+      case DocumentType.laboratoryLicense:
+        return 'Upload laboratory license';
+      case DocumentType.qualityCertification:
+        return 'Upload quality certification';
+      case DocumentType.dentalLicense:
+        return 'Upload dental practice license';
+      case DocumentType.practiceLicense:
+        return 'Upload practice license';
+      case DocumentType.businessLicense:
+        return 'Upload business license';
+      case DocumentType.healthPermits:
+        return 'Upload health permits';
       case DocumentType.other:
         return 'Other documents';
     }
@@ -669,12 +729,50 @@ extension on DocumentType {
         return 'Vaccination Record';
       case DocumentType.medicalLicense:
         return 'Medical License';
+      case DocumentType.nursingLicense:
+        return 'Nursing License';
+      case DocumentType.professionalLicense:
+        return 'Professional License';
       case DocumentType.professionalCertification:
         return 'Professional Certification';
+      case DocumentType.certification:
+        return 'Certification';
+      case DocumentType.nutritionCertification:
+        return 'Nutrition Certification';
+      case DocumentType.caregiverCertification:
+        return 'Caregiver Certification';
+      case DocumentType.backgroundCheck:
+        return 'Background Check';
       case DocumentType.validId:
         return 'Valid ID';
       case DocumentType.insurance:
         return 'Insurance Certificate';
+      case DocumentType.hospitalLicense:
+        return 'Hospital License';
+      case DocumentType.accreditation:
+        return 'Accreditation';
+      case DocumentType.businessRegistration:
+        return 'Business Registration';
+      case DocumentType.clinicLicense:
+        return 'Clinic License';
+      case DocumentType.medicalPermits:
+        return 'Medical Permits';
+      case DocumentType.pharmacyLicense:
+        return 'Pharmacy License';
+      case DocumentType.pharmacistLicense:
+        return 'Pharmacist License';
+      case DocumentType.laboratoryLicense:
+        return 'Laboratory License';
+      case DocumentType.qualityCertification:
+        return 'Quality Certification';
+      case DocumentType.dentalLicense:
+        return 'Dental License';
+      case DocumentType.practiceLicense:
+        return 'Practice License';
+      case DocumentType.businessLicense:
+        return 'Business License';
+      case DocumentType.healthPermits:
+        return 'Health Permits';
       case DocumentType.other:
         return 'Other Document';
     }

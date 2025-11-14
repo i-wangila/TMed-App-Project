@@ -108,6 +108,66 @@ class FAQsScreen extends StatelessWidget {
             answer:
                 'Tap on the Profile icon and select "Contact Us". You can reach us via email, phone, or through the in-app contact form. Our support team is available 24/7.',
           ),
+          _buildFAQItem(
+            context,
+            question: 'How do I enable two-factor authentication?',
+            answer:
+                'Go to Settings > Security > Two-Factor Authentication. Toggle it on and choose your preferred method: SMS, Email, or Authenticator App. Follow the setup instructions to secure your account.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'How do I change my password?',
+            answer:
+                'Navigate to Settings > Security > Change Password. Enter your current password, then your new password twice to confirm. Your password must be at least 6 characters long.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'Can I use biometric login?',
+            answer:
+                'Yes! Go to Settings > Security > Biometric Login and toggle it on. You can use fingerprint or face ID to quickly and securely access your account.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'How do I view my active sessions?',
+            answer:
+                'Go to Settings > Security > Active Sessions to see all devices logged into your account. You can log out from individual devices or all other devices at once for security.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'How do I check my login history?',
+            answer:
+                'Navigate to Settings > Security > Login History to view all recent login attempts, including successful and failed logins with device and location information.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'How do I control my privacy settings?',
+            answer:
+                'Go to Settings > Security > Privacy Settings to control who can view your profile, email, phone number, and who can message you.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'What happens if I deactivate my account?',
+            answer:
+                'When you deactivate your account, you lose access immediately but can reactivate by logging in within 3 months. If you don\'t log in within 3 months, your account will be permanently deleted.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'What happens if I delete my account?',
+            answer:
+                'When you request account deletion, you lose access immediately. Your account is scheduled for permanent deletion in 30 days. You can cancel the deletion by logging in within 30 days. After 30 days, all your data is permanently deleted.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'How do I manage notification preferences?',
+            answer:
+                'Go to Settings > Manage Notifications to control push notifications, email notifications, and SMS notifications. You can enable or disable each type based on your preferences.',
+          ),
+          _buildFAQItem(
+            context,
+            question: 'Can I download my personal data?',
+            answer:
+                'Yes! Go to Settings > Data & Privacy > Download My Data. Your personal data will be exported and sent to your registered email address within a few minutes.',
+          ),
           SizedBox(height: ResponsiveUtils.getResponsiveSpacing(context, 20)),
         ],
       ),
@@ -143,7 +203,7 @@ class FAQsScreen extends StatelessWidget {
           title: Text(
             question,
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
               fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
@@ -154,7 +214,7 @@ class FAQsScreen extends StatelessWidget {
             Text(
               answer,
               style: TextStyle(
-                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
                 color: Colors.grey[700],
                 height: 1.5,
               ),

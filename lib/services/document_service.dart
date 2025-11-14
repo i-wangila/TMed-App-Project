@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/document.dart';
+import '../models/message.dart';
+import 'message_service.dart';
 
 class DocumentService {
   static const String _storageKey = 'klinate_documents';
@@ -109,9 +111,94 @@ class DocumentService {
 
       _documents.add(document);
       await _saveDocuments();
+
+      // Send notification for medical documents
+      await _sendMedicalDocumentNotification(document);
+
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  // Send notification when medical document is uploaded
+  static Future<void> _sendMedicalDocumentNotification(
+    Document document,
+  ) async {
+    // Only send notifications for medical documents
+    if (!_isMedicalDocument(document.type)) return;
+
+    final messageType = _getMessageTypeForDocument(document.type);
+    final providerName = _getProviderNameForDocument(document.type);
+    final content = _getNotificationContent(document);
+
+    await MessageService.createMedicalRecordNotification(
+      providerName: providerName,
+      recordType: messageType,
+      content: content,
+      documentId: document.id,
+    );
+  }
+
+  static bool _isMedicalDocument(DocumentType type) {
+    return type == DocumentType.prescription ||
+        type == DocumentType.labResults ||
+        type == DocumentType.xrayReport ||
+        type == DocumentType.medicalReport ||
+        type == DocumentType.dischargeSummary ||
+        type == DocumentType.vaccinationRecord;
+  }
+
+  static MessageType _getMessageTypeForDocument(DocumentType type) {
+    switch (type) {
+      case DocumentType.prescription:
+        return MessageType.prescription;
+      case DocumentType.labResults:
+        return MessageType.labResults;
+      case DocumentType.xrayReport:
+        return MessageType.xrayReport;
+      case DocumentType.medicalReport:
+        return MessageType.medicalReport;
+      case DocumentType.dischargeSummary:
+        return MessageType.dischargeSummary;
+      case DocumentType.vaccinationRecord:
+        return MessageType.vaccinationRecord;
+      default:
+        return MessageType.medicalReport;
+    }
+  }
+
+  static String _getProviderNameForDocument(DocumentType type) {
+    switch (type) {
+      case DocumentType.prescription:
+        return 'Healthcare Provider';
+      case DocumentType.labResults:
+        return 'Laboratory';
+      case DocumentType.xrayReport:
+        return 'Radiology Department';
+      case DocumentType.medicalReport:
+        return 'Medical Center';
+      default:
+        return 'Healthcare Provider';
+    }
+  }
+
+  static String _getNotificationContent(Document document) {
+    switch (document.type) {
+      case DocumentType.prescription:
+        return 'New prescription has been sent to you. Tap to view details.';
+      case DocumentType.labResults:
+        return 'Your lab results are ready. Tap to view your test results.';
+      case DocumentType.xrayReport:
+        return 'Your X-ray report is available. Tap to view the report.';
+      case DocumentType.medicalReport:
+        return 'New medical report has been uploaded. Tap to view.';
+      case DocumentType.dischargeSummary:
+        return 'Your discharge summary is ready. Tap to view details.';
+      case DocumentType.vaccinationRecord:
+        return 'Vaccination record has been updated. Tap to view.';
+      default:
+        return 'New medical document available. Tap to view.';
     }
   }
 

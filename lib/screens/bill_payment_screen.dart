@@ -339,7 +339,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
           foregroundColor: Colors.black,
           side: BorderSide(color: Colors.grey[300]!),
           padding: EdgeInsets.symmetric(
-            vertical: ResponsiveUtils.getResponsiveSpacing(context, 16),
+            vertical: ResponsiveUtils.getResponsiveSpacing(context, 12),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -351,15 +351,15 @@ class _BillPaymentScreenState extends State<BillPaymentScreen> {
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(
-                  color: Colors.grey[700],
+                  color: Colors.black,
                   strokeWidth: 2,
                 ),
               )
             : Text(
                 'Pay Bill',
                 style: TextStyle(
-                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
-                  fontWeight: FontWeight.bold,
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
       ),

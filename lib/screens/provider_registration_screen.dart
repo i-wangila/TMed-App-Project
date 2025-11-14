@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../models/provider_type.dart';
 import '../models/document.dart';
 import '../models/user_profile.dart';
@@ -8,6 +11,8 @@ import '../services/healthcare_facility_service.dart';
 import '../services/document_service.dart';
 import '../services/user_service.dart';
 import '../services/provider_service.dart';
+import '../services/message_service.dart';
+import '../models/message.dart';
 import 'document_upload_screen.dart';
 
 class ProviderRegistrationScreen extends StatefulWidget {
@@ -42,10 +47,27 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
   final _experienceController = TextEditingController();
   final _bioController = TextEditingController();
   final _consultationFeeController = TextEditingController();
+  final _servicesDescriptionController = TextEditingController();
 
   final List<String> _selectedServices = [];
   final List<String> _selectedLanguages = [];
+  final List<String> _selectedInsurance = [];
+  final List<String> _selectedPaymentMethods = [];
+
+  // M-Pesa payment details
+  final _mpesaPaybillController = TextEditingController();
+  final _mpesaAccountController = TextEditingController();
+  final _mpesaTillController = TextEditingController();
+
+  // Bank transfer details
+  final _bankNameController = TextEditingController();
+  final _bankAccountController = TextEditingController();
+
   final List<String> _workingDays = [];
+  final Map<String, Map<String, String>> _workingHours =
+      {}; // day -> {start, end}
+  final List<String> _profileImages = []; // Store image paths
+  final ImagePicker _picker = ImagePicker();
 
   // Documents
   final List<Document> _uploadedDocuments = [];
@@ -341,7 +363,13 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             const SizedBox(height: 24),
             _buildLanguagesSection(),
             const SizedBox(height: 24),
+            _buildInsuranceSection(),
+            const SizedBox(height: 24),
+            _buildPaymentMethodsSection(),
+            const SizedBox(height: 24),
             _buildWorkingDaysSection(),
+            const SizedBox(height: 24),
+            _buildProfileImagesSection(),
           ],
         ),
       ),
@@ -444,8 +472,9 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             'Consultation Fee: KES ${_consultationFeeController.text}',
             'Services: ${_selectedServices.join(', ')}',
             'Languages: ${_selectedLanguages.join(', ')}',
-            'Working Days: ${_workingDays.join(', ')}',
           ]),
+          const SizedBox(height: 20),
+          _buildWorkingHoursReviewSection(),
           const SizedBox(height: 20),
           _buildReviewSection('Documents', [
             'Uploaded: ${_uploadedDocuments.length}/${widget.providerType.requirements.length} documents',
@@ -453,8 +482,10 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             'Pending: ${_uploadedDocuments.where((doc) => doc.status == DocumentStatus.pending).length} documents',
           ]),
           const SizedBox(height: 20),
-          _buildReviewSection('Profile Image', [
-            'Using current profile picture',
+          _buildReviewSection('Profile/Premise Image', [
+            _profileImages.isNotEmpty
+                ? '1 image uploaded'
+                : 'Using current profile picture',
           ]),
           const SizedBox(height: 32),
           Container(
@@ -565,6 +596,28 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             );
           }).toList(),
         ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _servicesDescriptionController,
+          maxLines: 5,
+          decoration: InputDecoration(
+            labelText: 'Detailed Service Description',
+            hintText:
+                'Describe your services in detail, including specialties, procedures, treatments, equipment, and any other relevant information...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.description),
+            helperText:
+                'Provide as much detail as you want about your services',
+            helperMaxLines: 2,
+          ),
+          validator: (value) {
+            if ((value == null || value.trim().isEmpty) &&
+                _selectedServices.isEmpty) {
+              return 'Please select services or provide a description';
+            }
+            return null;
+          },
+        ),
       ],
     );
   }
@@ -614,6 +667,188 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     );
   }
 
+  List<String> _buildPaymentMethodsString() {
+    final methods = List<String>.from(_selectedPaymentMethods);
+
+    // Add M-Pesa details if provided
+    if (_selectedPaymentMethods.contains('M-Pesa')) {
+      if (_mpesaPaybillController.text.isNotEmpty) {
+        methods.add(
+          'M-Pesa Paybill: ${_mpesaPaybillController.text}${_mpesaAccountController.text.isNotEmpty ? ' (Acc: ${_mpesaAccountController.text})' : ''}',
+        );
+      }
+      if (_mpesaTillController.text.isNotEmpty) {
+        methods.add('M-Pesa Till: ${_mpesaTillController.text}');
+      }
+    }
+
+    // Add Bank details if provided
+    if (_selectedPaymentMethods.contains('Bank Transfer')) {
+      if (_bankNameController.text.isNotEmpty &&
+          _bankAccountController.text.isNotEmpty) {
+        methods.add(
+          'Bank: ${_bankNameController.text} - ${_bankAccountController.text}',
+        );
+      }
+    }
+
+    return methods;
+  }
+
+  Widget _buildInsuranceSection() {
+    final availableInsurance = [
+      'NHIF',
+      'AAR Insurance',
+      'Jubilee Insurance',
+      'CIC Insurance',
+      'Madison Insurance',
+      'Britam',
+      'APA Insurance',
+      'GA Insurance',
+      'Old Mutual',
+      'Liberty Life',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Insurance Accepted',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Select insurance providers you accept',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: availableInsurance.map((insurance) {
+            final isSelected = _selectedInsurance.contains(insurance);
+            return FilterChip(
+              label: Text(insurance),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedInsurance.add(insurance);
+                  } else {
+                    _selectedInsurance.remove(insurance);
+                  }
+                });
+              },
+              selectedColor: Colors.blue[100],
+              checkmarkColor: Colors.blue[800],
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentMethodsSection() {
+    final paymentOptions = [
+      'M-Pesa',
+      'Bank Transfer',
+      'Credit/Debit Card',
+      'Insurance',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Payment Methods Accepted',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Select payment methods you accept',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: paymentOptions.map((method) {
+            final isSelected = _selectedPaymentMethods.contains(method);
+            return FilterChip(
+              label: Text(method),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedPaymentMethods.add(method);
+                  } else {
+                    _selectedPaymentMethods.remove(method);
+                  }
+                });
+              },
+              selectedColor: Colors.green[100],
+              checkmarkColor: Colors.green[800],
+            );
+          }).toList(),
+        ),
+        // M-Pesa Details
+        if (_selectedPaymentMethods.contains('M-Pesa')) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'M-Pesa Payment Details',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _mpesaPaybillController,
+            label: 'Paybill Number (Optional)',
+            hint: 'Enter paybill number',
+            icon: Icons.payment,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _mpesaAccountController,
+            label: 'Account Number (Optional)',
+            hint: 'Enter account number for paybill',
+            icon: Icons.account_balance,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _mpesaTillController,
+            label: 'Till Number (Optional)',
+            hint: 'Enter till number',
+            icon: Icons.store,
+            keyboardType: TextInputType.number,
+          ),
+        ],
+        // Bank Transfer Details
+        if (_selectedPaymentMethods.contains('Bank Transfer')) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'Bank Transfer Details',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _bankNameController,
+            label: 'Bank Name',
+            hint: 'e.g., Equity Bank',
+            icon: Icons.account_balance,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _bankAccountController,
+            label: 'Account Number',
+            hint: 'Enter account number',
+            icon: Icons.numbers,
+            keyboardType: TextInputType.number,
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildWorkingDaysSection() {
     final days = [
       'Monday',
@@ -628,35 +863,315 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Working Days',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        Row(
+          children: [
+            const Icon(Icons.schedule, size: 24),
+            const SizedBox(width: 8),
+            const Text(
+              'Working Days & Hours',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: days.map((day) {
-            final isSelected = _workingDays.contains(day);
-            return FilterChip(
-              label: Text(day),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _workingDays.add(day);
-                  } else {
-                    _workingDays.remove(day);
-                  }
-                });
-              },
-              selectedColor: Colors.orange[100],
-              checkmarkColor: Colors.orange[800],
-            );
-          }).toList(),
+        const SizedBox(height: 8),
+        Text(
+          'Select your working days and set hours for each day',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Column(
+            children: days.map((day) {
+              final isSelected = _workingDays.contains(day);
+              final hours = _workingHours[day];
+              final startTime = hours?['start'] ?? '08:00 AM';
+              final endTime = hours?['end'] ?? '10:00 PM';
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue[50] : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? Colors.blue[200]! : Colors.grey[300]!,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isSelected,
+                          onChanged: (selected) {
+                            setState(() {
+                              if (selected == true) {
+                                _workingDays.add(day);
+                                // Set default hours if not already set
+                                if (!_workingHours.containsKey(day)) {
+                                  _workingHours[day] = {
+                                    'start': '08:00 AM',
+                                    'end': '10:00 PM',
+                                  };
+                                }
+                              } else {
+                                _workingDays.remove(day);
+                                _workingHours.remove(day);
+                              }
+                            });
+                          },
+                          activeColor: Colors.blue[600],
+                        ),
+                        Expanded(
+                          child: Text(
+                            day,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? Colors.black
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          Text(
+                            '$startTime - $endTime',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (isSelected) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTimeSelector(
+                              label: 'Start Time',
+                              value: startTime,
+                              onTap: () => _selectTime(day, 'start', startTime),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTimeSelector(
+                              label: 'End Time',
+                              value: endTime,
+                              onTap: () => _selectTime(day, 'end', endTime),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ],
     );
+  }
+
+  Widget _buildTimeSelector({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectTime(String day, String type, String currentTime) async {
+    // Parse current time
+    final parts = currentTime.split(' ');
+    final timeParts = parts[0].split(':');
+    final isPM = parts[1] == 'PM';
+    int hour = int.parse(timeParts[0]);
+    final minute = int.parse(timeParts[1]);
+
+    // Convert to 24-hour format for TimeOfDay
+    if (isPM && hour != 12) hour += 12;
+    if (!isPM && hour == 12) hour = 0;
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: hour, minute: minute),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue[600]!,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      // Convert to 12-hour format
+      final hour12 = picked.hourOfPeriod == 0 ? 12 : picked.hourOfPeriod;
+      final period = picked.period == DayPeriod.am ? 'AM' : 'PM';
+      final formattedTime =
+          '${hour12.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')} $period';
+
+      setState(() {
+        if (!_workingHours.containsKey(day)) {
+          _workingHours[day] = {'start': '08:00 AM', 'end': '10:00 PM'};
+        }
+        _workingHours[day]![type] = formattedTime;
+      });
+    }
+  }
+
+  Widget _buildProfileImagesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Profile/Premise Image',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Upload one image that will appear on your provider card on the patient home screen. This can be your professional photo or your facility/premise.',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 16),
+        if (_profileImages.isNotEmpty)
+          Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+              image: DecorationImage(
+                image: kIsWeb
+                    ? NetworkImage(_profileImages[0])
+                    : FileImage(File(_profileImages[0])) as ImageProvider,
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _profileImages.clear();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _profileImages.isEmpty ? _pickProfileImage : null,
+          icon: const Icon(Icons.add_photo_alternate),
+          label: Text(
+            _profileImages.isEmpty
+                ? 'Upload Profile/Premise Image'
+                : 'Image Uploaded',
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.blue,
+            side: const BorderSide(color: Colors.blue),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          ),
+        ),
+        if (_profileImages.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'To change the image, remove the current one first',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _pickProfileImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _profileImages.add(image.path);
+        });
+      }
+    } catch (e) {
+      _showSnackBar('Failed to pick image: ${e.toString()}');
+    }
   }
 
   Widget _buildDocumentUploadCard(String documentType) {
@@ -892,6 +1407,68 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     );
   }
 
+  Widget _buildWorkingHoursReviewSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.schedule, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Working Schedule',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_workingDays.isEmpty)
+            Text(
+              'No working days selected',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            )
+          else
+            ..._workingDays.map((day) {
+              final hours = _workingHours[day];
+              final timeRange = hours != null
+                  ? '${hours['start']} - ${hours['end']}'
+                  : 'Not set';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: Text(
+                        day,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        timeRange,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNavigationButtons() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -927,12 +1504,14 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             child: ElevatedButton(
               onPressed: _isLoading ? null : _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: Colors.black, width: 2),
+                padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                 ),
+                elevation: 0,
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -940,7 +1519,7 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                       ),
                     )
                   : Text(
@@ -950,7 +1529,7 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
             ),
@@ -970,8 +1549,12 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
           break;
         case 1:
           isValid = _professionalInfoFormKey.currentState?.validate() ?? false;
-          if (isValid && _selectedServices.isEmpty) {
-            _showSnackBar('Please select at least one service');
+          if (isValid &&
+              _selectedServices.isEmpty &&
+              _servicesDescriptionController.text.trim().isEmpty) {
+            _showSnackBar(
+              'Please select services or provide a detailed description',
+            );
             isValid = false;
           }
           if (isValid && _selectedLanguages.isEmpty) {
@@ -1041,14 +1624,71 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
       case 'medical license':
         docType = DocumentType.medicalLicense;
         break;
+      case 'nursing license':
+        docType = DocumentType.nursingLicense;
+        break;
+      case 'professional license':
+        docType = DocumentType.professionalLicense;
+        break;
       case 'professional certification':
         docType = DocumentType.professionalCertification;
+        break;
+      case 'certification':
+        docType = DocumentType.certification;
+        break;
+      case 'nutrition certification':
+        docType = DocumentType.nutritionCertification;
+        break;
+      case 'caregiver certification':
+        docType = DocumentType.caregiverCertification;
+        break;
+      case 'background check':
+        docType = DocumentType.backgroundCheck;
         break;
       case 'valid id':
         docType = DocumentType.validId;
         break;
       case 'insurance certificate':
         docType = DocumentType.insurance;
+        break;
+      case 'hospital license':
+        docType = DocumentType.hospitalLicense;
+        break;
+      case 'accreditation':
+        docType = DocumentType.accreditation;
+        break;
+      case 'business registration':
+        docType = DocumentType.businessRegistration;
+        break;
+      case 'clinic license':
+        docType = DocumentType.clinicLicense;
+        break;
+      case 'medical permits':
+        docType = DocumentType.medicalPermits;
+        break;
+      case 'pharmacy license':
+        docType = DocumentType.pharmacyLicense;
+        break;
+      case 'pharmacist license':
+        docType = DocumentType.pharmacistLicense;
+        break;
+      case 'laboratory license':
+        docType = DocumentType.laboratoryLicense;
+        break;
+      case 'quality certification':
+        docType = DocumentType.qualityCertification;
+        break;
+      case 'dental license':
+        docType = DocumentType.dentalLicense;
+        break;
+      case 'practice license':
+        docType = DocumentType.practiceLicense;
+        break;
+      case 'business license':
+        docType = DocumentType.businessLicense;
+        break;
+      case 'health permits':
+        docType = DocumentType.healthPermits;
         break;
       default:
         docType = DocumentType.other;
@@ -1083,6 +1723,31 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
       // Map provider type ID to UserRole
       UserRole providerRole = _mapProviderTypeToRole(widget.providerType.id);
 
+      // Convert working hours to the format expected by the model
+      final Map<String, String> formattedWorkingHours = {};
+      for (final day in _workingDays) {
+        final hours = _workingHours[day];
+        if (hours != null) {
+          formattedWorkingHours[day] = '${hours['start']} - ${hours['end']}';
+        }
+      }
+
+      // Create BusinessPremises if name, phone, and address are provided
+      BusinessPremises? premises;
+      if (_nameController.text.trim().isNotEmpty &&
+          _phoneController.text.trim().isNotEmpty &&
+          _addressController.text.trim().isNotEmpty) {
+        premises = BusinessPremises(
+          name: _nameController.text.trim(),
+          address: _addressController.text.trim(),
+          city: 'Nairobi', // Default city, can be updated later
+          country: 'Kenya',
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim(),
+          description: _bioController.text.trim(),
+        );
+      }
+
       // Create ProviderProfile
       final providerProfile = ProviderProfile(
         userId: currentUser.id,
@@ -1090,12 +1755,18 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
         status: ProviderStatus.pending, // Pending verification
         specialization: _specializationController.text.trim(),
         servicesOffered: _selectedServices,
+        servicesDescription: _servicesDescriptionController.text.trim(),
+        profileImages: _profileImages,
         experienceYears: int.tryParse(_experienceController.text),
         bio: _bioController.text.trim(),
         languages: _selectedLanguages,
+        insuranceAccepted: _selectedInsurance,
+        paymentMethods: _buildPaymentMethodsString(),
         consultationFee: double.tryParse(_consultationFeeController.text),
         workingDays: _workingDays,
+        workingHours: formattedWorkingHours,
         verificationDocuments: _uploadedDocuments.map((d) => d.id).toList(),
+        premises: premises,
       );
 
       // Save provider profile
@@ -1152,6 +1823,16 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
 
       // Simulate processing time
       await Future.delayed(const Duration(seconds: 1));
+
+      // Send notification to user's inbox
+      await MessageService.addMessage(
+        senderId: 'system',
+        senderName: 'Klinate System',
+        content:
+            'Your provider application has been submitted successfully! Our team will review your documents and notify you once the verification is complete. Thank you for joining Klinate.',
+        type: MessageType.system,
+        category: MessageCategory.systemNotification,
+      );
 
       if (mounted) {
         setState(() {
@@ -1222,9 +1903,9 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             ),
             const SizedBox(height: 24),
             const Text(
-              'Application Submitted!',
+              'Documents Submitted Successfully!',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
@@ -1232,7 +1913,7 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Your application to become a ${widget.providerType.name} has been submitted successfully! Your application is now pending admin approval. You will be notified once approved.',
+              'Your documents have been submitted successfully and will be reviewed by our team. We will notify you once the review is complete.',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
@@ -1245,24 +1926,31 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Close dialog and navigate back to home
-                  Navigator.of(context).pop(); // Close dialog
-                  Navigator.of(context).pop(); // Close registration screen
+                  // Close dialog
+                  Navigator.of(context).pop();
+                  // Close registration screen
+                  Navigator.of(context).pop();
+                  // Close provider type selection screen
+                  Navigator.of(context).pop();
+                  // Close become provider screen - returns to profile
+                  Navigator.of(context).pop();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Colors.black, width: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(30),
                   ),
+                  elevation: 0,
                 ),
                 child: const Text(
                   'OK',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: Colors.black,
                   ),
                 ),
               ),

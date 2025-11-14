@@ -16,6 +16,7 @@ class _AuthScreenState extends State<AuthScreen> {
   late bool _isSignIn;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -166,12 +167,30 @@ class _AuthScreenState extends State<AuthScreen> {
                               ],
                               _buildTextField(
                                 controller: _emailController,
-                                hintText: _isSignIn
-                                    ? 'Email'
-                                    : 'Phone or Email',
+                                hintText: 'Email',
                                 icon: Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
                               ),
+                              if (!_isSignIn) ...[
+                                SizedBox(
+                                  height: ResponsiveUtils.getResponsiveSpacing(
+                                    context,
+                                    12,
+                                  ),
+                                ),
+                                _buildTextField(
+                                  controller: _phoneController,
+                                  hintText: 'Phone Number',
+                                  icon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  customValidator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Phone number is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
                               SizedBox(
                                 height: ResponsiveUtils.getResponsiveSpacing(
                                   context,
@@ -599,8 +618,7 @@ class _AuthScreenState extends State<AuthScreen> {
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
-          phone: _emailController.text
-              .trim(), // Using email field for phone/email
+          phone: _phoneController.text.trim(),
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
         );
@@ -655,6 +673,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void dispose() {
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();

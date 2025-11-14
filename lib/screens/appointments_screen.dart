@@ -5,7 +5,9 @@ import '../services/provider_availability_service.dart';
 import '../services/call_service.dart';
 import '../services/user_service.dart';
 import '../services/healthcare_provider_service.dart';
+import '../services/message_service.dart';
 import '../models/appointment.dart';
+import '../models/message.dart';
 import '../utils/responsive_utils.dart';
 import 'reschedule_appointment_screen.dart';
 import 'rate_provider_screen.dart';
@@ -37,6 +39,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     final completedCount = appointments
         .where((apt) => apt.status == AppointmentStatus.completed)
         .length;
+    final cancelledCount = appointments
+        .where((apt) => apt.status == AppointmentStatus.cancelled)
+        .length;
 
     return SafeArea(
       child: Column(
@@ -47,7 +52,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             child: Text(
               'My Bookings',
               style: TextStyle(
-                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
@@ -58,7 +63,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               color: Colors.white,
               child: Column(
                 children: [
-                  _buildTabBar(allCount, upcomingCount, completedCount),
+                  _buildTabBar(
+                    allCount,
+                    upcomingCount,
+                    completedCount,
+                    cancelledCount,
+                  ),
                   Expanded(child: _buildTabContent()),
                 ],
               ),
@@ -69,17 +79,27 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
   }
 
-  Widget _buildTabBar(int allCount, int upcomingCount, int completedCount) {
+  Widget _buildTabBar(
+    int allCount,
+    int upcomingCount,
+    int completedCount,
+    int cancelledCount,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(child: _buildTabButton('All Bookings', allCount, 0)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildTabButton('Upcoming', upcomingCount, 1)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildTabButton('Completed', completedCount, 2)),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildTabButton('All Bookings', allCount, 0),
+            const SizedBox(width: 8),
+            _buildTabButton('Upcoming', upcomingCount, 1),
+            const SizedBox(width: 8),
+            _buildTabButton('Completed', completedCount, 2),
+            const SizedBox(width: 8),
+            _buildTabButton('Cancelled', cancelledCount, 3),
+          ],
+        ),
       ),
     );
   }
@@ -89,7 +109,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     return GestureDetector(
       onTap: () => setState(() => _selectedTabIndex = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
@@ -106,7 +126,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected ? Colors.black : Colors.grey[700],
                 ),
@@ -158,6 +178,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             .where((apt) => apt.status == AppointmentStatus.completed)
             .toList();
         break;
+      case 3: // Cancelled
+        filteredAppointments = appointments
+            .where((apt) => apt.status == AppointmentStatus.cancelled)
+            .toList();
+        break;
       default: // All
         filteredAppointments = appointments;
     }
@@ -183,6 +208,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         break;
       case 2:
         message = 'No completed appointments';
+        break;
+      case 3:
+        message = 'No cancelled appointments';
         break;
       default:
         message = 'No appointments yet';
@@ -238,7 +266,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                       Text(
                         appointment.providerName,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
@@ -362,7 +390,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           child: Text(
             '$label:',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 11,
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
@@ -371,7 +399,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 13, color: Colors.black),
+            style: const TextStyle(fontSize: 11, color: Colors.black),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -429,7 +457,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
               child: const Text(
                 'Book Again',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -448,7 +476,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               icon: const Icon(Icons.star, size: 16),
               label: const Text(
                 'Rate Provider',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -482,7 +510,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               child: Text(
                 _getActionButtonLabel(appointment.communicationType),
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -504,7 +532,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
               child: const Text(
                 'Reschedule',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -524,7 +552,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -722,32 +750,83 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   }
 
   void _cancelAppointment(Appointment appointment) {
+    final reasonController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content: Text(
-          'Are you sure you want to cancel your appointment with ${appointment.providerName}?',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cancel appointment with ${appointment.providerName}?',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Reason for cancellation (optional)',
+                hintText: 'Please provide a reason...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
+            child: const Text('Back', style: TextStyle(color: Colors.grey)),
           ),
-          TextButton(
-            onPressed: () {
-              AppointmentService.cancelAppointment(appointment.id);
-              Navigator.pop(context);
-              setState(() {});
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Appointment cancelled successfully'),
-                  backgroundColor: Colors.green,
-                ),
+          ElevatedButton(
+            onPressed: () async {
+              final reason = reasonController.text.trim().isEmpty
+                  ? 'No reason provided'
+                  : reasonController.text.trim();
+
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
+              // Cancel the appointment
+              await AppointmentService.cancelAppointment(appointment.id);
+
+              // Send confirmation notification to patient
+              await MessageService.addMessage(
+                senderId: 'system',
+                senderName: 'Klinate System',
+                content:
+                    '✓ Appointment Cancelled\n\nYou have successfully cancelled your appointment with ${appointment.providerName} scheduled for ${DateFormat('MMM dd, yyyy - h:mm a').format(appointment.dateTime)}.\n\nReason: $reason\n\nThe provider has been notified.',
+                type: MessageType.appointment,
+                category: MessageCategory.systemNotification,
               );
+
+              // Send notification to provider's inbox
+              await MessageService.addSystemNotification(
+                '⚠️ Patient Cancelled Appointment\n\nYour patient has cancelled their appointment scheduled for ${DateFormat('MMM dd, yyyy - h:mm a').format(appointment.dateTime)}.\n\nPatient: ${UserService.currentUser?.name ?? 'Patient'}\nType: ${appointment.description}\nReason: $reason',
+                MessageType.appointment,
+              );
+
+              if (mounted) {
+                navigator.pop();
+                setState(() {});
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Appointment cancelled successfully'),
+                    backgroundColor: Colors.black,
+                  ),
+                );
+              }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Yes, Cancel'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancel Appointment'),
           ),
         ],
       ),

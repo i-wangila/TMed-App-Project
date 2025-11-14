@@ -4,6 +4,8 @@ import '../models/provider_profile.dart';
 import '../services/user_service.dart';
 import '../services/provider_service.dart';
 import 'manage_account_screen.dart';
+import 'manage_provider_account_screen.dart';
+import 'manage_admin_account_screen.dart';
 
 class ManageMyAccountsScreen extends StatefulWidget {
   const ManageMyAccountsScreen({super.key});
@@ -121,11 +123,18 @@ class _ManageMyAccountsScreenState extends State<ManageMyAccountsScreen> {
                                     profile.specialization ?? 'Healthcare',
                                 color: Colors.green,
                                 badge: 'APPROVED',
-                                onTap: () {
-                                  Navigator.pushNamed(
+                                onTap: () async {
+                                  await Navigator.push(
                                     context,
-                                    '/provider-dashboard',
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ManageProviderAccountScreen(
+                                            providerProfile: profile,
+                                          ),
+                                    ),
                                   );
+                                  // Reload accounts after returning
+                                  _loadAccounts();
                                 },
                               ),
                             ),
@@ -136,14 +145,19 @@ class _ManageMyAccountsScreenState extends State<ManageMyAccountsScreen> {
                               icon: Icons.admin_panel_settings,
                               title: 'Admin Account',
                               subtitle: 'Platform Administrator',
-                              description: 'Manage system',
+                              description: 'Admin settings',
                               color: Colors.purple,
                               badge: 'ADMIN',
-                              onTap: () {
-                                Navigator.pushNamed(
+                              onTap: () async {
+                                await Navigator.push(
                                   context,
-                                  '/admin/dashboard',
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ManageAdminAccountScreen(),
+                                  ),
                                 );
+                                // Reload accounts after returning
+                                _loadAccounts();
                               },
                             ),
                         ],
@@ -301,7 +315,7 @@ class _ManageMyAccountsScreenState extends State<ManageMyAccountsScreen> {
           if (_isAdmin)
             _buildInfoItem(
               '🛡️ Admin Account',
-              'Full system access and management privileges',
+              'Manage admin settings, role, and permissions',
             ),
         ],
       ),

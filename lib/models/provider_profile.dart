@@ -92,12 +92,17 @@ class ProviderProfile {
   // Professional Information
   String? specialization;
   List<String> servicesOffered;
+  String? servicesDescription; // Detailed description of services
+  List<String> profileImages; // Profile/premises images for display
   String? licenseNumber;
   String? registrationId;
   int? experienceYears;
   String? bio;
   List<String> qualifications;
+  List<String> certifications; // Certifications & Accreditations
   List<String> languages;
+  List<String> insuranceAccepted; // Insurance providers accepted
+  List<String> paymentMethods; // Payment methods accepted
 
   // Pricing
   double? consultationFee;
@@ -136,12 +141,17 @@ class ProviderProfile {
     this.availabilityStatus = AvailabilityStatus.available,
     this.specialization,
     this.servicesOffered = const [],
+    this.servicesDescription,
+    this.profileImages = const [],
     this.licenseNumber,
     this.registrationId,
     this.experienceYears,
     this.bio,
     this.qualifications = const [],
+    this.certifications = const [],
     this.languages = const [],
+    this.insuranceAccepted = const [],
+    this.paymentMethods = const [],
     this.consultationFee,
     this.servicePricing,
     this.currency = 'KES',
@@ -185,12 +195,17 @@ class ProviderProfile {
       'availabilityStatus': availabilityStatus.toString(),
       'specialization': specialization,
       'servicesOffered': servicesOffered,
+      'servicesDescription': servicesDescription,
+      'profileImages': profileImages,
       'licenseNumber': licenseNumber,
       'registrationId': registrationId,
       'experienceYears': experienceYears,
       'bio': bio,
       'qualifications': qualifications,
+      'certifications': certifications,
       'languages': languages,
+      'insuranceAccepted': insuranceAccepted,
+      'paymentMethods': paymentMethods,
       'consultationFee': consultationFee,
       'servicePricing': servicePricing,
       'currency': currency,
@@ -229,12 +244,17 @@ class ProviderProfile {
       ),
       specialization: json['specialization'],
       servicesOffered: List<String>.from(json['servicesOffered'] ?? []),
+      servicesDescription: json['servicesDescription'],
+      profileImages: List<String>.from(json['profileImages'] ?? []),
       licenseNumber: json['licenseNumber'],
       registrationId: json['registrationId'],
       experienceYears: json['experienceYears'],
       bio: json['bio'],
       qualifications: List<String>.from(json['qualifications'] ?? []),
+      certifications: List<String>.from(json['certifications'] ?? []),
       languages: List<String>.from(json['languages'] ?? []),
+      insuranceAccepted: List<String>.from(json['insuranceAccepted'] ?? []),
+      paymentMethods: List<String>.from(json['paymentMethods'] ?? []),
       consultationFee: json['consultationFee']?.toDouble(),
       servicePricing: json['servicePricing']?.toDouble(),
       currency: json['currency'] ?? 'KES',
@@ -280,7 +300,10 @@ class ProviderProfile {
     int? experienceYears,
     String? bio,
     List<String>? qualifications,
+    List<String>? certifications,
     List<String>? languages,
+    List<String>? insuranceAccepted,
+    List<String>? paymentMethods,
     double? consultationFee,
     double? servicePricing,
     String? currency,
@@ -310,7 +333,10 @@ class ProviderProfile {
       experienceYears: experienceYears ?? this.experienceYears,
       bio: bio ?? this.bio,
       qualifications: qualifications ?? this.qualifications,
+      certifications: certifications ?? this.certifications,
       languages: languages ?? this.languages,
+      insuranceAccepted: insuranceAccepted ?? this.insuranceAccepted,
+      paymentMethods: paymentMethods ?? this.paymentMethods,
       consultationFee: consultationFee ?? this.consultationFee,
       servicePricing: servicePricing ?? this.servicePricing,
       currency: currency ?? this.currency,

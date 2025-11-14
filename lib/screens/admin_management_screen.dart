@@ -293,7 +293,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add New Admin'),
+        title: const Text('Select User to Make Admin'),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -302,11 +302,12 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             itemBuilder: (context, index) {
               final user = nonAdminUsers[index];
               return ListTile(
+                leading: CircleAvatar(child: Text(user.name[0].toUpperCase())),
                 title: Text(user.name),
                 subtitle: Text(user.email),
-                onTap: () async {
+                onTap: () {
                   Navigator.pop(context);
-                  await _makeUserAdmin(user);
+                  _showAdminRoleSelectionDialog(user);
                 },
               );
             },
@@ -322,16 +323,131 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
     );
   }
 
-  Future<void> _makeUserAdmin(UserProfile user) async {
+  List<AdminPermission> _getDefaultPermissionsForLevel(AdminLevel level) {
+    switch (level) {
+      case AdminLevel.superAdmin:
+        return AdminPermission.values;
+      case AdminLevel.admin:
+        return [
+          AdminPermission.approveProviders,
+          AdminPermission.rejectProviders,
+          AdminPermission.suspendUsers,
+          AdminPermission.viewAllData,
+          AdminPermission.sendNotifications,
+          AdminPermission.viewReports,
+        ];
+      case AdminLevel.moderator:
+        return [
+          AdminPermission.approveProviders,
+          AdminPermission.viewAllData,
+          AdminPermission.viewReports,
+        ];
+    }
+  }
+
+  void _showAdminRoleSelectionDialog(UserProfile user) {
+    AdminLevel selectedLevel = AdminLevel.admin;
+    List<AdminPermission> selectedPermissions = _getDefaultPermissionsForLevel(
+      AdminLevel.admin,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Assign Admin Role to ${user.name}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Admin Level:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                ...AdminLevel.values.map(
+                  (level) => RadioListTile<AdminLevel>(
+                    title: Text(level.displayName),
+                    subtitle: Text(level.description),
+                    value: level,
+                    groupValue: selectedLevel,
+                    onChanged: (value) {
+                      if (value != null) {
+                        setDialogState(() {
+                          selectedLevel = value;
+                          selectedPermissions = _getDefaultPermissionsForLevel(
+                            value,
+                          );
+                        });
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                const Text(
+                  'Permissions:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                ...AdminPermission.values.map(
+                  (permission) => CheckboxListTile(
+                    title: Text(permission.displayName),
+                    value: selectedPermissions.contains(permission),
+                    onChanged: (checked) {
+                      setDialogState(() {
+                        if (checked == true) {
+                          selectedPermissions.add(permission);
+                        } else {
+                          selectedPermissions.remove(permission);
+                        }
+                      });
+                    },
+                    dense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _makeUserAdmin(user, selectedLevel, selectedPermissions);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Assign Role'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _makeUserAdmin(
+    UserProfile user,
+    AdminLevel level,
+    List<AdminPermission> permissions,
+  ) async {
     final admin = await AdminService.createAdmin(
       userId: user.id,
-      level: AdminLevel.admin,
+      level: level,
+      permissions: permissions,
     );
 
     if (admin != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${user.name} is now an admin'),
+          content: Text('${user.name} is now a ${level.displayName}'),
           backgroundColor: Colors.green,
         ),
       );

@@ -63,7 +63,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             'Klinate',
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -71,7 +71,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             'Telemedicine & Healthcare Platform',
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
               color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
@@ -90,7 +90,7 @@ class AboutScreen extends StatelessWidget {
             child: Text(
               'Version 1.0.0',
               style: TextStyle(
-                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 12),
                 color: Colors.black,
                 fontWeight: FontWeight.w600,
               ),
@@ -112,7 +112,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             'Klinate is a comprehensive telemedicine and healthcare platform designed to revolutionize how patients access healthcare services. Our mission is to make quality healthcare accessible, affordable, and convenient for everyone.',
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
               color: Colors.grey[700],
               height: 1.5,
             ),
@@ -121,7 +121,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             'Built with cutting-edge technology, Klinate connects patients with healthcare providers, facilitates secure communication, manages medical records, and provides a seamless healthcare experience from the comfort of your home.',
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
               color: Colors.grey[700],
               height: 1.5,
             ),

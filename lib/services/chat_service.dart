@@ -8,6 +8,71 @@ class ChatService {
   static final Map<String, StreamController<List<ChatMessage>>>
   _streamControllers = {};
 
+  // Generate consistent chat room ID for two users
+  static String generateChatRoomId(String userId1, String userId2) {
+    // Sort IDs to ensure consistency regardless of who initiates
+    final ids = [userId1, userId2]..sort();
+    return 'chat_${ids[0]}_${ids[1]}';
+  }
+
+  // Get all conversations for a specific user
+  static Future<Map<String, List<ChatMessage>>> getUserConversations(
+    String userId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    final conversations = <String, List<ChatMessage>>{};
+
+    for (final key in keys) {
+      if (key.startsWith(_storageKey) && key.contains(userId)) {
+        final chatRoomId = key.replaceFirst('${_storageKey}_', '');
+        final messages = await loadChatMessages(chatRoomId);
+        if (messages.isNotEmpty) {
+          conversations[chatRoomId] = messages;
+        }
+      }
+    }
+
+    return conversations;
+  }
+
+  // Get conversation list with last message for a user
+  static Future<List<Map<String, dynamic>>> getConversationsList(
+    String userId,
+  ) async {
+    final conversations = await getUserConversations(userId);
+    final conversationsList = <Map<String, dynamic>>[];
+
+    conversations.forEach((chatRoomId, messages) {
+      if (messages.isNotEmpty) {
+        final lastMessage = messages.last;
+        // Extract other participant ID from chat room ID
+        final participantId = chatRoomId
+            .replaceAll('chat_', '')
+            .replaceAll(userId, '')
+            .replaceAll('_', '');
+
+        conversationsList.add({
+          'chatRoomId': chatRoomId,
+          'participantId': participantId,
+          'participantName': lastMessage.senderName,
+          'lastMessage': lastMessage.text,
+          'lastMessageTime': lastMessage.timestamp,
+          'unreadCount': messages.where((m) => !m.isFromUser).length,
+        });
+      }
+    });
+
+    // Sort by last message time (most recent first)
+    conversationsList.sort(
+      (a, b) => (b['lastMessageTime'] as DateTime).compareTo(
+        a['lastMessageTime'] as DateTime,
+      ),
+    );
+
+    return conversationsList;
+  }
+
   // Get real-time stream for chat messages
   static Stream<List<ChatMessage>> getChatStream(String chatRoomId) {
     if (!_streamControllers.containsKey(chatRoomId)) {
@@ -74,60 +139,6 @@ class ChatService {
     _chatRooms[chatRoomId]!.add(message);
     await _saveChatMessages(chatRoomId);
     _notifyListeners(chatRoomId);
-
-    // Simulate provider response for demo purposes
-    if (message.isFromUser) {
-      _simulateProviderResponse(chatRoomId, message.text);
-    }
-  }
-
-  // Simulate provider response (replace with real backend integration)
-  static void _simulateProviderResponse(String chatRoomId, String userMessage) {
-    Timer(const Duration(seconds: 2), () async {
-      final response = _generateProviderResponse(userMessage);
-      final responseMessage = ChatMessage(
-        text: response,
-        isFromUser: false,
-        timestamp: DateTime.now(),
-        senderName: _getProviderName(chatRoomId),
-        messageType: ChatMessageType.text,
-      );
-
-      if (!_chatRooms.containsKey(chatRoomId)) {
-        _chatRooms[chatRoomId] = [];
-      }
-
-      _chatRooms[chatRoomId]!.add(responseMessage);
-      await _saveChatMessages(chatRoomId);
-      _notifyListeners(chatRoomId);
-    });
-  }
-
-  static String _getProviderName(String chatRoomId) {
-    // Extract provider name from chat room ID or use default
-    if (chatRoomId.contains('dr_')) {
-      return 'Dr. Smith';
-    }
-    return 'Healthcare Provider';
-  }
-
-  static String _generateProviderResponse(String userMessage) {
-    final message = userMessage.toLowerCase();
-
-    if (message.contains('appointment') || message.contains('book')) {
-      return 'I can help you book an appointment. What type of consultation would you prefer - video call, voice call, or chat?';
-    } else if (message.contains('prescription') ||
-        message.contains('medicine')) {
-      return 'Your prescription is ready for pickup. You can collect it from the pharmacy mentioned in your prescription details.';
-    } else if (message.contains('pain') || message.contains('symptom')) {
-      return 'I understand your concern. Can you describe the symptoms in more detail? When did they start?';
-    } else if (message.contains('thank')) {
-      return 'You\'re welcome! Is there anything else I can help you with?';
-    } else if (message.contains('call') || message.contains('video')) {
-      return 'I can arrange a video or voice call consultation. Would you like me to schedule one for you?';
-    } else {
-      return 'Thank you for your message. I\'ll review your case and get back to you with more information shortly.';
-    }
   }
 
   // Get messages for a chat room (without loading from storage)
@@ -146,6 +157,7 @@ class ChatService {
     String chatRoomId,
     String initialMessage,
     String senderName,
+    String senderId,
     DateTime timestamp,
   ) async {
     final messages = await loadChatMessages(chatRoomId);
@@ -157,6 +169,7 @@ class ChatService {
         ChatMessage(
           text: initialMessage,
           isFromUser: false,
+          senderId: senderId,
           timestamp: timestamp,
           senderName: senderName,
         ),
@@ -170,6 +183,7 @@ enum ChatMessageType { text, image, file, call, video }
 class ChatMessage {
   final String text;
   final bool isFromUser;
+  final String senderId; // ID of the user who sent the message
   final DateTime timestamp;
   final String senderName;
   final ChatMessageType messageType;
@@ -178,6 +192,7 @@ class ChatMessage {
   ChatMessage({
     required this.text,
     required this.isFromUser,
+    required this.senderId,
     required this.timestamp,
     required this.senderName,
     this.messageType = ChatMessageType.text,
@@ -189,6 +204,7 @@ class ChatMessage {
     return {
       'text': text,
       'isFromUser': isFromUser,
+      'senderId': senderId,
       'timestamp': timestamp.toIso8601String(),
       'senderName': senderName,
       'messageType': messageType.toString(),
@@ -201,6 +217,7 @@ class ChatMessage {
     return ChatMessage(
       text: json['text'],
       isFromUser: json['isFromUser'],
+      senderId: json['senderId'] ?? '',
       timestamp: DateTime.parse(json['timestamp']),
       senderName: json['senderName'],
       messageType: ChatMessageType.values.firstWhere(
@@ -209,5 +226,10 @@ class ChatMessage {
       ),
       attachmentUrl: json['attachmentUrl'],
     );
+  }
+
+  // Helper method to check if message is from current user
+  bool isFromCurrentUser(String currentUserId) {
+    return senderId == currentUserId;
   }
 }

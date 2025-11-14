@@ -239,7 +239,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   Widget _buildWithdrawButton() {
     return SizedBox(
       width: double.infinity,
-      height: ResponsiveUtils.isSmallScreen(context) ? 48 : 56,
+      height: ResponsiveUtils.isSmallScreen(context) ? 44 : 48,
       child: ElevatedButton(
         onPressed: _isProcessing ? null : _processWithdrawal,
         style: ElevatedButton.styleFrom(
@@ -256,14 +256,14 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[700]!),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                 ),
               )
             : Text(
                 'Withdraw Funds',
                 style: TextStyle(
-                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
-                  fontWeight: FontWeight.bold,
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 14),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
       ),

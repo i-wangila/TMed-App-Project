@@ -358,4 +358,64 @@ class AdminService {
       createdBy: 'system',
     );
   }
+
+  // Deactivate admin account (remove from active admins)
+  static Future<bool> deactivateAdmin(String adminId) async {
+    try {
+      final admin = _admins[adminId];
+      if (admin == null) return false;
+
+      // Simply remove from active admins map
+      _admins.remove(adminId);
+      await _saveAdmins();
+
+      if (kDebugMode) {
+        print('Admin deactivated: $adminId');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deactivating admin: $e');
+      }
+      return false;
+    }
+  }
+
+  // Reactivate admin account
+  static Future<bool> reactivateAdmin(String adminId, String userId) async {
+    try {
+      // Recreate admin profile
+      return await createAdmin(
+            userId: userId,
+            level: AdminLevel.admin,
+            createdBy: 'reactivation',
+          ) !=
+          null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error reactivating admin: $e');
+      }
+      return false;
+    }
+  }
+
+  // Remove admin profile completely (when removing admin role)
+  static Future<bool> removeAdminProfile(String adminId) async {
+    try {
+      _admins.remove(adminId);
+      await _saveAdmins();
+
+      if (kDebugMode) {
+        print('Admin profile removed: $adminId');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error removing admin profile: $e');
+      }
+      return false;
+    }
+  }
 }
