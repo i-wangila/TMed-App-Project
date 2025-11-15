@@ -37,7 +37,7 @@ class _ManageProviderAccountScreenState
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
-          'Provider Account Settings',
+          'Business Account Settings',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -398,7 +398,7 @@ class _ManageProviderAccountScreenState
           ),
           const SizedBox(height: 16),
           Text(
-            'These actions are permanent and will affect your provider account.',
+            'These actions are permanent and will affect your business account.',
             style: TextStyle(fontSize: 14, color: Colors.red[800]),
           ),
           const SizedBox(height: 16),
@@ -407,7 +407,7 @@ class _ManageProviderAccountScreenState
             child: OutlinedButton.icon(
               onPressed: _deactivateProviderAccount,
               icon: const Icon(Icons.pause_circle_outline),
-              label: const Text('Deactivate Provider Account'),
+              label: const Text('Deactivate Business Account'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.orange[700],
                 side: BorderSide(color: Colors.orange[300]!),
@@ -421,7 +421,7 @@ class _ManageProviderAccountScreenState
             child: OutlinedButton.icon(
               onPressed: _deleteProviderAccount,
               icon: const Icon(Icons.delete_forever),
-              label: const Text('Delete Provider Account'),
+              label: const Text('Delete Business Account'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red[700],
                 side: BorderSide(color: Colors.red[300]!),
@@ -539,11 +539,11 @@ class _ManageProviderAccountScreenState
           children: [
             Icon(Icons.pause_circle_outline, color: Colors.orange[700]),
             const SizedBox(width: 8),
-            const Text('Deactivate Provider Account'),
+            const Text('Deactivate Business Account'),
           ],
         ),
         content: const Text(
-          'Your provider account will be temporarily deactivated. You can reactivate it later from Settings.\n\n'
+          'Your business account will be temporarily deactivated. You can reactivate it later from Settings.\n\n'
           'During deactivation:\n'
           '• Your profile will be hidden from patients\n'
           '• You won\'t receive new appointments\n'
@@ -579,12 +579,12 @@ class _ManageProviderAccountScreenState
           children: [
             Icon(Icons.delete_forever, color: Colors.red[700]),
             const SizedBox(width: 8),
-            const Text('Delete Provider Account'),
+            const Text('Delete Business Account'),
           ],
         ),
         content: const Text(
           'This action is PERMANENT and cannot be undone!\n\n'
-          'Deleting your provider account will:\n'
+          'Deleting your business account will:\n'
           '• Remove your profile from the platform\n'
           '• Cancel all future appointments\n'
           '• Delete all your provider data\n'
@@ -618,7 +618,7 @@ class _ManageProviderAccountScreenState
       builder: (context) => AlertDialog(
         title: const Text('Final Confirmation'),
         content: const Text(
-          'Are you absolutely sure you want to delete your provider account?\n\n'
+          'Are you absolutely sure you want to delete your business account?\n\n'
           'Type "DELETE" to confirm.',
         ),
         actions: [
@@ -655,7 +655,7 @@ class _ManageProviderAccountScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Provider account deactivated successfully'),
+            content: Text('Business account deactivated successfully'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -684,7 +684,7 @@ class _ManageProviderAccountScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Provider account deleted successfully'),
+            content: Text('Business account deleted successfully'),
             backgroundColor: Colors.red,
           ),
         );

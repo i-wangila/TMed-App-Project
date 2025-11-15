@@ -1,4 +1,6 @@
 import 'user_profile.dart';
+import 'academic_qualification.dart';
+import 'work_experience.dart';
 
 enum ProviderStatus {
   pending, // Awaiting verification
@@ -98,6 +100,8 @@ class ProviderProfile {
   String? registrationId;
   int? experienceYears;
   String? bio;
+  List<WorkExperience> workExperience; // Work history (LinkedIn-style)
+  List<AcademicQualification> academicQualifications; // Academic qualifications
   List<String> qualifications;
   List<String> certifications; // Certifications & Accreditations
   List<String> languages;
@@ -147,6 +151,8 @@ class ProviderProfile {
     this.registrationId,
     this.experienceYears,
     this.bio,
+    this.workExperience = const [],
+    this.academicQualifications = const [],
     this.qualifications = const [],
     this.certifications = const [],
     this.languages = const [],
@@ -201,6 +207,9 @@ class ProviderProfile {
       'registrationId': registrationId,
       'experienceYears': experienceYears,
       'bio': bio,
+      'academicQualifications': academicQualifications
+          .map((q) => q.toJson())
+          .toList(),
       'qualifications': qualifications,
       'certifications': certifications,
       'languages': languages,
@@ -250,6 +259,11 @@ class ProviderProfile {
       registrationId: json['registrationId'],
       experienceYears: json['experienceYears'],
       bio: json['bio'],
+      academicQualifications:
+          (json['academicQualifications'] as List<dynamic>?)
+              ?.map((q) => AcademicQualification.fromJson(q))
+              .toList() ??
+          [],
       qualifications: List<String>.from(json['qualifications'] ?? []),
       certifications: List<String>.from(json['certifications'] ?? []),
       languages: List<String>.from(json['languages'] ?? []),
@@ -299,6 +313,7 @@ class ProviderProfile {
     String? registrationId,
     int? experienceYears,
     String? bio,
+    List<AcademicQualification>? academicQualifications,
     List<String>? qualifications,
     List<String>? certifications,
     List<String>? languages,
@@ -332,6 +347,8 @@ class ProviderProfile {
       registrationId: registrationId ?? this.registrationId,
       experienceYears: experienceYears ?? this.experienceYears,
       bio: bio ?? this.bio,
+      academicQualifications:
+          academicQualifications ?? this.academicQualifications,
       qualifications: qualifications ?? this.qualifications,
       certifications: certifications ?? this.certifications,
       languages: languages ?? this.languages,

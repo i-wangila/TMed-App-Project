@@ -1,10 +1,10 @@
-# Klinate - Virtual Medical Clinic App
+# Klinate - Professional Healthcare Platform
 
-A comprehensive Flutter-based telemedicine application that connects patients with healthcare providers across Kenya, offering virtual consultations, appointment management, real-time communication, and integrated healthcare services.
+A comprehensive Flutter-based healthcare platform that connects patients with healthcare professionals and facilities across Kenya. Built with LinkedIn-style professional profiles, comprehensive business account management, and integrated telemedicine services.
 
 ## 🏥 Overview
 
-Klinate is a modern, production-ready healthcare platform designed to make medical services accessible through digital channels. The app provides seamless connections between patients and various healthcare providers including doctors, hospitals, pharmacies, laboratories, and nutritionists with full communication capabilities including voice calls, video calls, and real-time messaging.
+Klinate is a modern, production-ready healthcare platform designed to make medical services accessible through digital channels. The platform features professional LinkedIn-style profiles for healthcare providers, comprehensive business account management, and seamless patient-provider connections with full communication capabilities including voice calls, video calls, and real-time messaging.
 
 ## ✨ Features
 
@@ -28,7 +28,7 @@ Klinate is a modern, production-ready healthcare platform designed to make medic
 - **Healthcare Facilities**: Hospitals, clinics with complete facility information
 - **Pharmacies**: Prescription fulfillment and medication services
 - **Laboratories**: Diagnostic testing and health screening services
-- **Provider Registration**: Complete onboarding system with working hours selection
+- **Business Account Registration**: Complete onboarding system with working hours selection
 - **Profile Management**: Full profile editing with professional image upload
 - **Working Hours**: Day-by-day schedule with customizable start and end times
 - **Insurance & Payments**: Display accepted insurance providers and payment methods
@@ -73,7 +73,7 @@ Klinate is a modern, production-ready healthcare platform designed to make medic
 - **Multi-Provider Reviews**: Rate doctors, hospitals, pharmacies, and laboratories
 - **Detailed Feedback**: Written reviews with star ratings
 - **Review Management**: View, edit, and manage all reviews
-- **Provider Ratings**: Aggregate ratings displayed on provider profiles
+- **Business Account Ratings**: Aggregate ratings displayed on business profiles
 - **Review Analytics**: Comprehensive review statistics and insights
 
 ### 💳 Integrated Payment & Wallet System
@@ -84,7 +84,7 @@ Klinate is a modern, production-ready healthcare platform designed to make medic
 
 ### 🛡️ Complete Admin System
 - **Admin Dashboard**: Comprehensive system overview with real-time statistics
-- **Provider Approval**: Review and approve/reject provider applications
+- **Business Account Approval**: Review and approve/reject business account applications
 - **User Management**: View, suspend, and manage all users
 - **Admin Management**: Add and manage multiple administrators
 - **Activity Log**: Complete audit trail of all admin actions
@@ -95,12 +95,12 @@ Klinate is a modern, production-ready healthcare platform designed to make medic
 ### 📱 Enhanced User Experience
 - **Quick Actions**: Call, video, message buttons on all provider cards
 - **Smart Navigation**: Intuitive bottom navigation with smooth transitions
-- **Provider Dashboard Access**: Quick access icon appears in nav bar when provider account is approved
+- **Business Dashboard Access**: Quick access icon appears in nav bar when business account is approved
 - **Search & Filter**: Advanced provider and facility search capabilities
 - **Responsive Design**: Optimized for all screen sizes and devices
 - **Professional UI**: Clean, medical-grade interface design with compact elements
-- **Account Management**: Unified interface for General, Provider, and Admin accounts
-- **Streamlined Provider Dashboard**: Focused tabs - Patient, Inbox, Appointments, Analytics
+- **Account Management**: Unified interface for General, Business, and Admin accounts
+- **Streamlined Business Dashboard**: Focused tabs - Patient, Inbox, Appointments, Analytics
 - **Optimized Sizing**: Reduced spacing and font sizes for cleaner, more professional appearance
 - **Patient Management**: Comprehensive patient records with medical history, appointments, and prescriptions
 - **Security Dashboard**: Centralized security settings with comprehensive controls
@@ -272,7 +272,7 @@ lib/
 │   ├── conversation.dart               # Chat conversation threading
 │   ├── document.dart                   # Document upload and verification
 │   ├── message.dart                    # Messaging system
-│   ├── provider_profile.dart           # Healthcare provider profiles
+│   ├── provider_profile.dart           # Healthcare professional profiles
 │   ├── review.dart                     # Review and rating system
 │   ├── system_stats.dart               # System-wide statistics
 │   └── user_profile.dart               # User profile management
@@ -282,9 +282,9 @@ lib/
 │   ├── admin_setup_screen.dart         # Initial admin setup
 │   ├── activity_log_screen.dart        # Admin activity audit trail
 │   ├── appointments_screen.dart        # Patient appointment management
-│   ├── approved_providers_screen.dart  # View approved providers
+│   ├── approved_providers_screen.dart  # View approved business accounts
 │   ├── auth_screen.dart                # Authentication with validation
-│   ├── become_provider_screen.dart     # Provider application flow
+│   ├── become_provider_screen.dart     # Business account application flow
 │   ├── book_appointment_screen.dart    # Appointment booking with calendar
 │   ├── chat_screen.dart                # Real-time messaging interface
 │   ├── edit_provider_basic_info_screen.dart    # Edit provider basic info
@@ -298,16 +298,16 @@ lib/
 │   ├── manage_provider_account_screen.dart # Provider account settings
 │   ├── notification_chat_screen.dart   # Notification center
 │   ├── patient_detail_screen.dart      # Detailed patient records
-│   ├── pending_providers_screen.dart   # Provider approval queue
+│   ├── pending_providers_screen.dart   # Business account approval queue
 │   ├── profile_screen.dart             # User profile management
 │   ├── provider_analytics_screen.dart  # Real-time analytics dashboard
 │   ├── provider_appointments_screen.dart # Provider appointment management
 │   ├── provider_dashboard_screen.dart  # Provider main dashboard
-│   ├── provider_inbox_screen.dart      # Provider message inbox
-│   ├── provider_patients_screen.dart   # Provider patient list
-│   ├── provider_profile_screen.dart    # Healthcare provider profiles
-│   ├── provider_registration_screen.dart # Provider onboarding system
-│   ├── provider_reviews_screen.dart    # Provider review management
+│   ├── provider_inbox_screen.dart      # Business account message inbox
+│   ├── provider_patients_screen.dart   # Business account patient list
+│   ├── provider_profile_screen.dart    # Healthcare professional profiles
+│   ├── provider_registration_screen.dart # Business account registration system
+│   ├── provider_reviews_screen.dart    # Business account review management
 │   ├── rate_any_provider_screen.dart   # Rate any provider
 │   ├── rate_provider_screen.dart       # Review and rating interface
 │   ├── reports_screen.dart             # Admin reports and analytics
@@ -318,7 +318,7 @@ lib/
 ├── services/                           # Business logic and data management
 │   ├── admin_service.dart              # Admin operations and statistics
 │   ├── appointment_service.dart        # Appointment booking with real-time updates
-│   ├── approval_service.dart           # Provider approval workflow
+│   ├── approval_service.dart           # Business account approval workflow
 │   ├── audit_service.dart              # Activity logging and audit trails
 │   ├── chat_service.dart               # Real-time messaging service
 │   ├── document_service.dart           # Document upload and management
@@ -335,7 +335,7 @@ lib/
 
 ### Production-Ready Features
 - ✅ **Real-Time Data Synchronization**: Stream-based architecture for instant updates
-- ✅ **Comprehensive Admin System**: Complete provider approval and user management
+- ✅ **Comprehensive Admin System**: Complete business account approval and user management
 - ✅ **Interactive Analytics**: Click-to-view detailed appointment breakdowns
 - ✅ **Unified Messaging**: Single inbox for all communications
 - ✅ **Multi-Account Support**: Seamlessly switch between Patient, Provider, and Admin roles
@@ -471,8 +471,8 @@ The app has been thoroughly tested for:
    - Image management (change, remove, update)
    - Professional information updates
 
-5. **Provider & Facility Features**
-   - Provider registration and onboarding
+5. **Business Account & Facility Features**
+   - Business account registration and onboarding
    - Facility profile management
    - Service and department listings
    - Contact information integration
@@ -673,8 +673,8 @@ For support, inquiries, and technical assistance:
 
 - **Complete Admin System**:
   - **Admin Dashboard**: Real-time system statistics and overview
-  - **Provider Approval Workflow**: Review and approve/reject provider applications
-  - **Document Verification**: Review uploaded provider documents
+  - **Business Account Approval Workflow**: Review and approve/reject business account applications
+  - **Document Verification**: Review uploaded business account documents
   - **User Management**: View, suspend, and manage all users
   - **Admin Management**: Add and manage multiple administrators
   - **Activity Logging**: Complete audit trail of all admin actions
@@ -708,10 +708,10 @@ For support, inquiries, and technical assistance:
   - Real-time chat with proper message threading
   - Message history persistence
 
-### v1.1.0 - Enhanced Provider Experience
-- **Provider Dashboard Navigation**: Quick access icon in bottom nav bar for approved providers
-- **Working Hours Management**: Providers can set specific hours for each working day during registration
-- **Enhanced Provider Profiles**: 
+### v1.1.0 - Enhanced Business Account Experience
+- **Business Dashboard Navigation**: Quick access icon in bottom nav bar for approved business accounts
+- **Working Hours Management**: Business accounts can set specific hours for each working day during registration
+- **Enhanced Business Profiles**: 
   - Insurance accepted section with visual badges
   - Certifications & accreditations display
   - Payment methods accepted
@@ -719,7 +719,7 @@ For support, inquiries, and technical assistance:
   - Left-aligned About and Services sections with icons
   - Removed redundant call buttons (using bottom action bar)
 - **Improved Chat System**: Messages now correctly align (sent messages on right, received on left)
-- **Streamlined Provider Dashboard**: Removed unused "List" tab, focusing on Patient, Inbox, Appointments, and Analytics
+- **Streamlined Business Dashboard**: Removed unused "List" tab, focusing on Patient, Inbox, Appointments, and Analytics
 - **Compact UI Elements**: Reduced button sizes and font sizes throughout the app for cleaner appearance
 - **Profile Header Optimization**: Smaller avatar and text sizes in profile screen
 
@@ -732,10 +732,10 @@ For support, inquiries, and technical assistance:
 - **Multi-Provider Support**: Doctors, hospitals, pharmacies, laboratories, and facilities
 - **Comprehensive Review System**: Rate and review all types of healthcare providers
 - **Quick Actions**: Call, video, and message buttons throughout the app
-- **Provider Registration**: Complete onboarding system for healthcare providers
+- **Business Account Registration**: Complete onboarding system for healthcare professionals
 - **Facility Management**: Full facility profile and service management
 - **Real-time Features**: Live chat, call management, and instant notifications
-- **Full Admin System**: Complete admin dashboard with provider approval workflow
+- **Full Admin System**: Complete admin dashboard with business account approval workflow
 - **Security Features**: Route guards, authentication checks, and audit trails
 - **Account Management**: Unified interface for managing multiple account types
 - **Document Persistence**: Uploaded documents persist across navigation
@@ -780,3 +780,337 @@ For support, inquiries, and technical assistance:
 **Klinate** - Making healthcare accessible, one tap at a time. 🏥📱
 
 *Built with ❤️ using Flutter*
+
+--
+-
+
+## 📜 Privacy Policy
+
+**Last Updated: November 15, 2025**
+
+### 1. Introduction
+
+Klinate ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our healthcare platform.
+
+### 2. Information We Collect
+
+**Personal Information:**
+- Name, email address, phone number
+- Date of birth, gender, location
+- Profile photos and professional credentials
+- Medical history and health records (for patients)
+- Professional qualifications and certifications (for healthcare providers)
+
+**Health Information:**
+- Medical conditions and diagnoses
+- Prescriptions and medications
+- Appointment records and consultation notes
+- Lab results and medical documents
+
+**Usage Information:**
+- Device information and IP address
+- App usage patterns and preferences
+- Communication logs (calls, messages, video consultations)
+- Payment and transaction history
+
+### 3. How We Use Your Information
+
+- **Healthcare Services**: Facilitate consultations, appointments, and medical care
+- **Communication**: Enable messaging, calls, and video consultations between patients and providers
+- **Account Management**: Create and manage user accounts and business accounts
+- **Payment Processing**: Process consultation fees and transactions
+- **Platform Improvement**: Analyze usage to improve our services
+- **Legal Compliance**: Comply with healthcare regulations and legal requirements
+- **Security**: Protect against fraud and unauthorized access
+
+### 4. Information Sharing
+
+We do not sell your personal information. We may share information with:
+
+- **Healthcare Providers**: When you book appointments or consultations
+- **Service Providers**: Third-party services that help operate our platform (payment processors, cloud storage)
+- **Legal Authorities**: When required by law or to protect rights and safety
+- **Business Transfers**: In case of merger, acquisition, or sale of assets
+
+### 5. Data Security
+
+We implement industry-standard security measures including:
+- End-to-end encryption for communications
+- Secure data storage and transmission
+- Regular security audits and updates
+- Access controls and authentication systems
+- HIPAA-compliant data handling practices
+
+### 6. Your Rights
+
+You have the right to:
+- Access your personal and health information
+- Correct inaccurate information
+- Request deletion of your data (subject to legal requirements)
+- Opt-out of marketing communications
+- Export your data in a portable format
+- Deactivate or delete your account
+
+### 7. Data Retention
+
+- **Active Accounts**: Data retained while account is active
+- **Deactivated Accounts**: 3-month grace period before permanent deletion
+- **Deleted Accounts**: 30-day cancellation window, then permanent deletion
+- **Medical Records**: Retained as required by healthcare regulations (typically 7-10 years)
+
+### 8. Children's Privacy
+
+Klinate is not intended for users under 18 years of age. We do not knowingly collect information from children. Parents/guardians must create accounts for minors.
+
+### 9. International Data Transfers
+
+Your information may be transferred to and processed in countries other than Kenya. We ensure appropriate safeguards are in place for such transfers.
+
+### 10. Changes to Privacy Policy
+
+We may update this Privacy Policy periodically. We will notify you of significant changes via email or app notification.
+
+### 11. Contact Us
+
+For privacy concerns or questions:
+- Email: privacy@klinate.com
+- Phone: +254 740 109 195
+- Address: Nairobi, Kenya
+
+---
+
+## 📋 Terms and Conditions
+
+**Last Updated: November 15, 2025**
+
+### 1. Acceptance of Terms
+
+By accessing or using Klinate, you agree to be bound by these Terms and Conditions. If you disagree with any part, you may not use our services.
+
+### 2. User Accounts
+
+**Account Creation:**
+- You must provide accurate and complete information
+- You are responsible for maintaining account security
+- You must be 18+ years old or have parental consent
+- One person may not create multiple accounts
+
+**Account Types:**
+- **Patient Accounts**: For individuals seeking healthcare services
+- **Business Accounts**: For healthcare professionals and facilities
+- **Admin Accounts**: For platform administrators (by invitation only)
+
+### 3. Business Account Terms
+
+**For Healthcare Providers:**
+- Must possess valid professional licenses and certifications
+- Must provide accurate qualifications and credentials
+- Subject to verification and approval process
+- Must maintain professional standards and ethics
+- Responsible for accuracy of medical advice and services provided
+
+**Registration Requirements:**
+- Complete LinkedIn-style professional profile
+- Provide work experience and education history
+- Upload valid licenses and certifications
+- Verify contact information and physical address
+- Set consultation fees and working hours
+
+### 4. Services Provided
+
+**Platform Services:**
+- Connection between patients and healthcare providers
+- Appointment scheduling and management
+- Communication tools (messaging, voice, video calls)
+- Payment processing and wallet management
+- Medical record storage and management
+
+**Not Provided:**
+- Emergency medical services (call emergency services for emergencies)
+- Prescription fulfillment (providers may prescribe, but fulfillment is separate)
+- Medical diagnosis guarantee (consultations are advisory)
+
+### 5. User Responsibilities
+
+**Patients:**
+- Provide accurate medical history
+- Attend scheduled appointments or cancel in advance
+- Pay consultation fees as agreed
+- Use platform for legitimate healthcare purposes only
+- Respect healthcare providers' time and expertise
+
+**Healthcare Providers:**
+- Maintain valid licenses and certifications
+- Provide professional and ethical care
+- Maintain patient confidentiality
+- Respond to appointments and messages promptly
+- Keep availability schedule updated
+
+### 6. Payments and Fees
+
+**Consultation Fees:**
+- Set by individual healthcare providers
+- Displayed before booking confirmation
+- Paid through platform wallet system
+- Non-refundable except in case of provider cancellation
+
+**Platform Fees:**
+- Service fees may apply to transactions
+- Fees clearly disclosed before payment
+- Payment methods: M-Pesa, Bank Transfer, Credit/Debit Card
+
+### 7. Cancellations and Refunds
+
+**Appointment Cancellations:**
+- Patients may cancel up to 24 hours before appointment for full refund
+- Cancellations within 24 hours may incur fees
+- Provider cancellations result in automatic full refund
+- No-shows may result in forfeiture of fees
+
+### 8. Intellectual Property
+
+**Platform Content:**
+- Klinate owns all platform design, code, and branding
+- Users retain ownership of their content (profiles, messages, reviews)
+- Users grant Klinate license to use content for platform operation
+
+**Prohibited Uses:**
+- Copying or reproducing platform code or design
+- Using platform content for competing services
+- Scraping or automated data collection
+
+### 9. Prohibited Conduct
+
+Users may not:
+- Provide false information or impersonate others
+- Use platform for illegal activities
+- Harass, abuse, or threaten other users
+- Share inappropriate or offensive content
+- Attempt to hack or compromise platform security
+- Spam or send unsolicited communications
+- Share login credentials with others
+
+### 10. Content Moderation
+
+We reserve the right to:
+- Remove content that violates terms
+- Suspend or terminate accounts for violations
+- Monitor communications for safety and compliance
+- Report illegal activities to authorities
+
+### 11. Liability and Disclaimers
+
+**Platform Liability:**
+- Platform provided "as is" without warranties
+- We are not liable for medical outcomes or provider actions
+- We do not guarantee service availability or accuracy
+- Maximum liability limited to fees paid in last 12 months
+
+**Healthcare Provider Liability:**
+- Providers are independent professionals
+- Providers responsible for their own medical advice and actions
+- Platform is not liable for provider negligence or malpractice
+
+### 12. Dispute Resolution
+
+**Process:**
+1. Contact support for informal resolution
+2. Mediation if informal resolution fails
+3. Arbitration in Nairobi, Kenya
+4. Kenyan law governs all disputes
+
+### 13. Account Termination
+
+**By User:**
+- Deactivate account (3-month grace period)
+- Delete account (30-day cancellation window)
+- Export data before deletion
+
+**By Klinate:**
+- Immediate termination for serious violations
+- Suspension for investigation of violations
+- Notice provided except in severe cases
+
+### 14. Changes to Terms
+
+We may modify these terms at any time. Continued use after changes constitutes acceptance. Significant changes will be notified via email.
+
+### 15. Severability
+
+If any provision is found unenforceable, remaining provisions remain in effect.
+
+### 16. Contact Information
+
+For questions about these terms:
+- Email: legal@klinate.com
+- Phone: +254 740 109 195
+- Address: Nairobi, Kenya
+
+---
+
+## 🔒 Data Protection Statement
+
+Klinate is committed to protecting your data in compliance with:
+- Kenya Data Protection Act, 2019
+- HIPAA (Health Insurance Portability and Accountability Act) standards
+- GDPR principles for international users
+- ISO 27001 information security standards
+
+**Our Commitments:**
+- ✅ Secure data encryption in transit and at rest
+- ✅ Regular security audits and penetration testing
+- ✅ Staff training on data protection and privacy
+- ✅ Incident response plan for data breaches
+- ✅ Data minimization - collect only what's necessary
+- ✅ User control over personal data
+- ✅ Transparent data practices
+
+**Your Data Rights:**
+- Right to access your data
+- Right to rectification of inaccurate data
+- Right to erasure ("right to be forgotten")
+- Right to data portability
+- Right to object to processing
+- Right to withdraw consent
+
+For data protection inquiries: dpo@klinate.com
+
+---
+
+## ⚖️ Healthcare Disclaimer
+
+**Important Notice:**
+
+Klinate is a healthcare platform that facilitates connections between patients and healthcare providers. We do not provide medical advice, diagnosis, or treatment directly.
+
+**Key Points:**
+- 🏥 **Not for Emergencies**: In case of medical emergency, call emergency services immediately
+- 👨‍⚕️ **Provider Responsibility**: Healthcare providers are independent professionals responsible for their own medical advice
+- 📋 **No Guarantee**: We do not guarantee medical outcomes or accuracy of provider advice
+- 💊 **Prescription Verification**: Always verify prescriptions with licensed pharmacists
+- 🔍 **Second Opinions**: Seek second opinions for serious conditions
+- 📱 **Technology Limitations**: Video/voice quality may affect consultations
+
+**Always consult with qualified healthcare professionals for medical decisions.**
+
+---
+
+## 📞 Support & Contact
+
+**Customer Support:**
+- Email: support@klinate.com
+- Phone: +254 740 109 195
+- Hours: Monday - Friday, 8:00 AM - 6:00 PM EAT
+
+**Business Account Support:**
+- Email: business@klinate.com
+- Phone: +254 740 109 196
+
+**Technical Support:**
+- Email: tech@klinate.com
+
+**Emergency:** For medical emergencies, call 999 or 112 immediately.
+
+---
+
+**© 2025 Klinate. All rights reserved.**

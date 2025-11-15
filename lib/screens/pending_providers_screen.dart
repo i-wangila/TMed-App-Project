@@ -56,7 +56,7 @@ class _PendingProvidersScreenState extends State<PendingProvidersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Approve Provider'),
+        title: const Text('Approve Business Account'),
         content: Text('Are you sure you want to approve $providerName?'),
         actions: [
           TextButton(
@@ -93,7 +93,7 @@ class _PendingProvidersScreenState extends State<PendingProvidersScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to approve provider'),
+              content: Text('Failed to approve business account'),
               backgroundColor: Colors.red,
             ),
           );
@@ -112,7 +112,7 @@ class _PendingProvidersScreenState extends State<PendingProvidersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reject Provider'),
+        title: const Text('Reject Business Account'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +177,7 @@ class _PendingProvidersScreenState extends State<PendingProvidersScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to reject provider'),
+              content: Text('Failed to reject business account'),
               backgroundColor: Colors.red,
             ),
           );
@@ -205,7 +205,7 @@ class _PendingProvidersScreenState extends State<PendingProvidersScreen> {
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
-                hintText: 'Search providers...',
+                hintText: 'Search business accounts...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),

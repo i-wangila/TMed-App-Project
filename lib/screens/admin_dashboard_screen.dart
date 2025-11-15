@@ -49,7 +49,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         actions: [
           RoleSwitcher(
             onRoleChanged: (role) {
-              // Navigate based on new role
               if (role == UserRole.patient) {
                 Navigator.pushReplacementNamed(context, '/home');
               } else if (role.isProvider) {
@@ -57,35 +56,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings - Coming Soon')),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDashboardData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWelcomeSection(),
-                    const SizedBox(height: 24),
-                    _buildStatsGrid(),
-                    const SizedBox(height: 24),
-                    _buildQuickActions(),
-                    const SizedBox(height: 24),
-                    _buildRecentActivity(),
-                  ],
+          : SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadDashboardData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    MediaQuery.of(context).padding.bottom + 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeSection(),
+                      const SizedBox(height: 24),
+                      _buildStatsGrid(),
+                      const SizedBox(height: 24),
+                      _buildQuickActions(),
+                      const SizedBox(height: 24),
+                      _buildRecentActivity(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -280,7 +277,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         const SizedBox(height: 8),
         _buildActionButton(
-          'Approved Providers',
+          'Approved Business Accounts',
           Icons.check_circle,
           Colors.green,
           badge: approvedCount > 0 ? approvedCount.toString() : null,

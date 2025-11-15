@@ -298,6 +298,21 @@ class MessageService {
     return _messages.where((msg) => msg.category == category).toList();
   }
 
+  // Get messages by role
+  static List<Message> getMessagesByRole(MessageRole role) {
+    return _messages.where((msg) => msg.role == role).toList();
+  }
+
+  // Get patient messages only
+  static List<Message> getPatientMessages() {
+    return _messages.where((msg) => msg.role == MessageRole.patient).toList();
+  }
+
+  // Get provider messages only
+  static List<Message> getProviderMessages() {
+    return _messages.where((msg) => msg.role == MessageRole.provider).toList();
+  }
+
   // Get healthcare provider messages (can reply)
   static List<Message> getHealthcareProviderMessages() {
     return _messages
@@ -319,6 +334,7 @@ class MessageService {
     required String content,
     required MessageType type,
     MessageCategory category = MessageCategory.healthcareProvider,
+    MessageRole role = MessageRole.patient, // Default to patient
     String? documentId,
     bool isRead = false,
   }) async {
@@ -330,11 +346,13 @@ class MessageService {
       timestamp: DateTime.now(),
       type: type,
       category: category,
+      role: role,
       documentId: documentId,
       isRead: isRead,
     );
     _messages.insert(0, message);
     await _saveMessages();
+    _notifyListeners();
   }
 
   // Force save messages (useful when app is closing or navigating away)

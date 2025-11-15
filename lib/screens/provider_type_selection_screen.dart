@@ -56,7 +56,7 @@ class _ProviderTypeSelectionScreenState
         children: [
           Expanded(
             child: _buildCategoryTab(
-              'Individual Provider',
+              'Healthcare Professional',
               'Doctors, Nurses, Therapists',
               0,
             ),

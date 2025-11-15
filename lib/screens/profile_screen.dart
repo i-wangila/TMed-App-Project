@@ -617,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: const Icon(Icons.dashboard, color: Colors.white, size: 24),
         ),
         title: const Text(
-          'Provider Dashboard',
+          'Business Dashboard',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -671,7 +671,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         title: const Text(
-          'Become a Healthcare Provider',
+          'Business Account',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -770,7 +770,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (_isHealthcareProvider()) ...[
             _buildMenuItem(
               icon: Icons.edit_note,
-              title: 'Edit Provider Profile',
+              title: 'Edit Business Profile',
               subtitle: 'Update your professional information',
               onTap: () => _editProviderProfile(),
             ),
@@ -1342,7 +1342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Provider Account',
+                            'Business Account',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -1513,7 +1513,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _editProviderProfile() async {
     final user = UserService.currentUser;
     if (user == null || !user.isProvider) {
-      _showSnackBar('Only healthcare providers can edit provider profiles');
+      _showSnackBar('Only business account holders can edit business profiles');
       return;
     }
 
@@ -1528,7 +1528,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (result != null) {
-        _showSnackBar('Provider profile updated successfully');
+        _showSnackBar('Business profile updated successfully');
       }
       return;
     }
@@ -1551,7 +1551,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // No provider or facility profile found
     _showSnackBar(
-      'Provider profile not found. Please complete your provider registration first.',
+      'Business account not found. Please complete your business account registration first.',
     );
   }
 }

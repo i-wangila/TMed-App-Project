@@ -18,13 +18,13 @@ extension AdminActionTypeExtension on AdminActionType {
   String get displayName {
     switch (this) {
       case AdminActionType.providerApproved:
-        return 'Provider Approved';
+        return 'Business Account Approved';
       case AdminActionType.providerRejected:
-        return 'Provider Rejected';
+        return 'Business Account Rejected';
       case AdminActionType.providerSuspended:
-        return 'Provider Suspended';
+        return 'Business Account Suspended';
       case AdminActionType.providerReactivated:
-        return 'Provider Reactivated';
+        return 'Business Account Reactivated';
       case AdminActionType.userSuspended:
         return 'User Suspended';
       case AdminActionType.userReactivated:

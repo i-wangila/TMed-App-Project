@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/responsive_utils.dart';
 import 'facility_profile_screen.dart';
+import 'provider_profile_screen.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String title;
@@ -305,15 +306,32 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     return GestureDetector(
       onTap: () {
-        // Navigate to facility profile screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => FacilityProfileScreen(
-              facilityId: item['id'] ?? item['title'] ?? '',
+        // Navigate to appropriate profile screen based on category
+        final isProvider =
+            widget.category.contains('Doctors') ||
+            widget.category.contains('Nurses') ||
+            widget.category.contains('Therapists') ||
+            widget.category.contains('Professionals');
+
+        if (isProvider) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProviderProfileScreen(
+                providerId: item['id'] ?? item['title'] ?? '',
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FacilityProfileScreen(
+                facilityId: item['id'] ?? item['title'] ?? '',
+              ),
+            ),
+          );
+        }
       },
       child: Container(
         margin: EdgeInsets.only(

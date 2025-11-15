@@ -122,33 +122,45 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
       decoration: const BoxDecoration(color: Colors.white),
       child: Row(
         children: [
-          // Navigation Items
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildNavItem('Patient', 0),
-                  _buildNavItem('Inbox', 1),
-                  _buildNavItem('Appointments', 2),
-                  _buildNavItem('Analytics', 3),
-                ],
-              ),
+          // Home button with double-tap functionality (moved to left)
+          Container(
+            margin: const EdgeInsets.only(right: 4),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black, width: 1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: _handleHomeTap,
+              icon: const Icon(Icons.home, color: Colors.black, size: 20),
+              tooltip: 'Double tap to exit Business Dashboard',
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
           ),
-          // Notification icon with badge
+          // Notification icon with badge (moved next to home)
           Stack(
             children: [
-              IconButton(
-                onPressed: () {
-                  setState(() => _selectedNavIndex = 1); // Go to Inbox
-                },
-                icon: const Icon(
-                  Icons.notifications,
-                  color: Colors.black,
-                  size: 24,
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black, width: 1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                tooltip: 'Notifications',
+                child: IconButton(
+                  onPressed: () {
+                    setState(() => _selectedNavIndex = 1); // Go to Inbox
+                  },
+                  icon: const Icon(
+                    Icons.notifications,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                  tooltip: 'Notifications',
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                ),
               ),
               if (_unreadCount > 0)
                 Positioned(
@@ -178,11 +190,19 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             ],
           ),
           const SizedBox(width: 8),
-          // Home button with double-tap functionality
-          IconButton(
-            onPressed: _handleHomeTap,
-            icon: const Icon(Icons.home, color: Colors.black, size: 24),
-            tooltip: 'Double tap to exit Provider Dashboard',
+          // Navigation Items (with reduced spacing)
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildNavItem('Patient', 0),
+                  _buildNavItem('Inbox', 1),
+                  _buildNavItem('Appointments', 2),
+                  _buildNavItem('Analytics', 3),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -194,7 +214,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return InkWell(
       onTap: () => setState(() => _selectedNavIndex = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -234,12 +254,12 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'No Provider Profile Found',
+              'No Business Account Found',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
-              'Your provider registration is being processed.',
+              'Your business account registration is being processed.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),

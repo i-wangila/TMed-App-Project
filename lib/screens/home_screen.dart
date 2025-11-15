@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'appointments_screen.dart';
 import 'category_screen.dart';
 import 'inbox_screen.dart';
@@ -38,12 +40,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
 
+  // Profile image state for drawer header
+  String? _profileImageUrl;
+  File? _profileImageFile;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     MessageService.addListener(_onMessageUpdate);
     _searchController.addListener(_onSearchChanged);
+    _loadProfileImage();
   }
 
   @override
@@ -418,29 +426,45 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         children: [
           Stack(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.grey[300],
-                child: Text(
-                  'II',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final img = _getProfileImage();
+                  return CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: img,
+                    onBackgroundImageError: img != null ? (e, st) {} : null,
+                    child: img == null
+                        ? Text(
+                            _getInitials(),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          )
+                        : null,
+                  );
+                },
               ),
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[300]!, width: 2),
+                child: GestureDetector(
+                  onTap: _showImagePickerSheet,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey[300]!, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 16,
+                      color: Colors.black,
+                    ),
                   ),
-                  child: Icon(Icons.camera_alt, size: 16, color: Colors.black),
                 ),
               ),
             ],
@@ -510,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Become a Healthcare Provider',
+                    'Create a Healthcare Business Account',
                     style: TextStyle(
                       fontSize: ResponsiveUtils.getResponsiveFontSize(
                         context,
@@ -753,6 +777,150 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
     );
+  }
+
+  // === Profile image helpers ===
+  void _loadProfileImage() {
+    final user = UserService.currentUser;
+    if (user?.profilePicturePath != null &&
+        user!.profilePicturePath!.isNotEmpty) {
+      setState(() {
+        if (user.profilePicturePath!.startsWith('/')) {
+          _profileImageFile = File(user.profilePicturePath!);
+          _profileImageUrl = null;
+        } else {
+          _profileImageUrl = user.profilePicturePath;
+          _profileImageFile = null;
+        }
+      });
+    }
+  }
+
+  ImageProvider? _getProfileImage() {
+    if (_profileImageFile != null) return FileImage(_profileImageFile!);
+    if (_profileImageUrl != null) return NetworkImage(_profileImageUrl!);
+    return null;
+  }
+
+  String _getInitials() {
+    final name = UserService.currentUser?.name ?? 'User';
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts.first[0].toUpperCase();
+  }
+
+  void _showImagePickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildSourceOption(
+                  icon: Icons.camera_alt,
+                  label: 'Camera',
+                  onTap: () => _pickImage(ImageSource.camera),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSourceOption(
+                  icon: Icons.photo_library,
+                  label: 'Gallery',
+                  onTap: () => _pickImage(ImageSource.gallery),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 28, color: Colors.black),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final navigator = Navigator.of(context);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (image == null) {
+        navigator.pop();
+        return;
+      }
+
+      if (kIsWeb) {
+        setState(() {
+          _profileImageUrl = image.path; // blob URL
+          _profileImageFile = null;
+        });
+      } else {
+        final File saved = await _saveImageToAppDirectory(File(image.path));
+        setState(() {
+          _profileImageFile = saved;
+          _profileImageUrl = null;
+        });
+      }
+
+      await _saveProfileImage();
+      if (mounted) navigator.pop();
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  Future<File> _saveImageToAppDirectory(File image) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final path =
+        '${dir.path}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    return image.copy(path);
+  }
+
+  Future<void> _saveProfileImage() async {
+    String? imagePath;
+    if (_profileImageFile != null) {
+      imagePath = _profileImageFile!.path;
+    } else if (_profileImageUrl != null) {
+      imagePath = _profileImageUrl;
+    }
+    await UserService.updateProfilePicture(imagePath ?? '');
+    setState(() {});
   }
 
   Widget _buildHomeHeader() {
@@ -1360,7 +1528,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               _buildNavItem(Icons.calendar_today, 'Appointments', 1),
               _buildNavItem(Icons.inbox, 'Inbox', 2),
               if (hasApprovedProvider)
-                _buildNavItem(Icons.dashboard, 'Provider', 4),
+                _buildNavItem(Icons.dashboard, 'Business', 4),
               _buildNavItem(Icons.person, 'Profile', 3),
             ],
           ),

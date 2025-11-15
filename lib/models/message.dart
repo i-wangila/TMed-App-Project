@@ -17,6 +17,11 @@ enum MessageCategory {
   systemNotification, // Read-only system alerts/notifications
 }
 
+enum MessageRole {
+  patient, // Message belongs to patient inbox
+  provider, // Message belongs to provider inbox
+}
+
 class Message {
   final String id;
   final String senderId;
@@ -25,6 +30,7 @@ class Message {
   final DateTime timestamp;
   final MessageType type;
   final MessageCategory category;
+  final MessageRole role; // Which role's inbox this message belongs to
   final String? documentId; // ID of the medical record document
   bool isRead;
 
@@ -36,6 +42,7 @@ class Message {
     required this.timestamp,
     this.type = MessageType.text,
     this.category = MessageCategory.healthcareProvider,
+    this.role = MessageRole.patient, // Default to patient
     this.documentId,
     this.isRead = false,
   });
@@ -64,6 +71,7 @@ class Message {
       'timestamp': timestamp.toIso8601String(),
       'type': type.toString(),
       'category': category.toString(),
+      'role': role.toString(),
       'documentId': documentId,
       'isRead': isRead,
     };
@@ -84,6 +92,11 @@ class Message {
       category: MessageCategory.values.firstWhere(
         (e) => e.toString() == json['category'],
         orElse: () => MessageCategory.healthcareProvider,
+      ),
+      role: MessageRole.values.firstWhere(
+        (e) => e.toString() == json['role'],
+        orElse: () => MessageRole
+            .patient, // Default to patient for backward compatibility
       ),
       documentId: json['documentId'],
       isRead: json['isRead'] ?? false,

@@ -4,6 +4,7 @@ import 'dart:io';
 import '../models/provider_profile.dart';
 import '../models/user_profile.dart';
 import '../models/message.dart';
+import '../models/work_experience.dart';
 import '../services/provider_service.dart';
 import '../services/user_service.dart';
 import 'chat_screen.dart';
@@ -75,26 +76,27 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             child: Column(
               children: [
                 _buildProviderInfo(),
-                _buildProfessionalDetailsSection(),
                 if (provider!.bio != null && provider!.bio!.isNotEmpty)
                   _buildAboutSection(),
+                if (provider!.workExperience.isNotEmpty)
+                  _buildExperienceSection(),
+                if (provider!.academicQualifications.isNotEmpty)
+                  _buildEducationSection(),
+                if (provider!.certifications.isNotEmpty)
+                  _buildCertificationsSection(),
                 if (provider!.servicesOffered.isNotEmpty ||
                     (provider!.servicesDescription != null &&
                         provider!.servicesDescription!.isNotEmpty))
                   _buildServicesSection(),
-                if (provider!.qualifications.isNotEmpty)
-                  _buildQualificationsSection(),
+                if (provider!.insuranceAccepted.isNotEmpty)
+                  _buildInsuranceSection(),
+                if (provider!.paymentMethods.isNotEmpty)
+                  _buildPaymentMethodsSection(),
                 if (provider!.workingDays.isNotEmpty ||
                     provider!.workingHours.isNotEmpty)
                   _buildAvailabilityScheduleSection(),
                 _buildReviewsSection(),
                 _buildContactInformationSection(),
-                if (provider!.insuranceAccepted.isNotEmpty)
-                  _buildInsuranceSection(),
-                if (provider!.certifications.isNotEmpty)
-                  _buildCertificationsSection(),
-                if (provider!.paymentMethods.isNotEmpty)
-                  _buildPaymentMethodsSection(),
                 const SizedBox(height: 100),
               ],
             ),
@@ -242,23 +244,6 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
                 ),
             ],
           ),
-          if (provider!.consultationFee != null) ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(Icons.attach_money, color: Colors.green[700], size: 20),
-                const SizedBox(width: 4),
-                Text(
-                  'Consultation Fee: ${provider!.currency} ${provider!.consultationFee!.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
           if (provider!.languages.isNotEmpty) ...[
             const SizedBox(height: 16),
             Wrap(
@@ -278,7 +263,7 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
     );
   }
 
-  Widget _buildProfessionalDetailsSection() {
+  Widget _buildExperienceSection() {
     return Container(
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(24),
@@ -286,104 +271,158 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Professional Details',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Grid layout for professional information
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
+          Row(
             children: [
-              if (provider!.specialization != null)
-                _buildInfoCard(
-                  icon: Icons.medical_services,
-                  label: 'Specialization',
-                  value: provider!.specialization!,
-                  color: Colors.blue,
+              Icon(Icons.work, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'Experience',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
-              if (provider!.experienceYears != null)
-                _buildInfoCard(
-                  icon: Icons.work,
-                  label: 'Experience',
-                  value: '${provider!.experienceYears} years',
-                  color: Colors.green,
-                ),
-              if (provider!.consultationFee != null)
-                _buildInfoCard(
-                  icon: Icons.payments,
-                  label: 'Consultation Fee',
-                  value: 'KES ${provider!.consultationFee!.toStringAsFixed(0)}',
-                  color: Colors.orange,
-                ),
-              if (provider!.languages.isNotEmpty)
-                _buildInfoCard(
-                  icon: Icons.language,
-                  label: 'Languages',
-                  value: provider!.languages.take(2).join(', '),
-                  color: Colors.purple,
-                ),
-              _buildInfoCard(
-                icon: Icons.people,
-                label: 'Total Patients',
-                value: provider!.totalPatients.toString(),
-                color: Colors.teal,
-              ),
-              _buildInfoCard(
-                icon: Icons.calendar_today,
-                label: 'Appointments',
-                value: provider!.totalAppointments.toString(),
-                color: Colors.indigo,
               ),
             ],
+          ),
+          const SizedBox(height: 20),
+          ...provider!.workExperience.map((exp) => _buildExperienceItem(exp)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExperienceItem(WorkExperience exp) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Icon(Icons.business, color: Colors.grey[600], size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exp.jobTitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  exp.organization,
+                  style: TextStyle(fontSize: 15, color: Colors.grey[800]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${exp.duration} · ${exp.durationText}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                if (exp.location != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    exp.location!,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+                if (exp.description != null && exp.description!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    exp.description!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildEducationSection() {
+    // Build professional paragraph from academic qualifications
+    final qualificationParagraphs = <String>[];
+
+    for (final qual in provider!.academicQualifications) {
+      final parts = <String>[];
+
+      // Add title and education level
+      if (qual.educationLevel != 'N/A') {
+        parts.add('Holds ${qual.educationLevel}');
+      }
+
+      // Add specialization
+      if (qual.specialization != 'General' && qual.specialization != 'N/A') {
+        parts.add('in ${qual.specialization}');
+      }
+
+      // Add field of study
+      if (qual.fieldOfStudy != null && qual.fieldOfStudy!.isNotEmpty) {
+        parts.add('(${qual.fieldOfStudy})');
+      }
+
+      // Add institution
+      if (qual.institution != null && qual.institution!.isNotEmpty) {
+        parts.add('from ${qual.institution}');
+      }
+
+      // Add year
+      if (qual.yearCompleted != null) {
+        parts.add('(${qual.yearCompleted})');
+      }
+
+      if (parts.isNotEmpty) {
+        qualificationParagraphs.add(parts.join(' '));
+      }
+    }
+
     return Container(
-      width: 160,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Icon(Icons.school, size: 24, color: Colors.black),
+              const SizedBox(width: 8),
+              const Text(
+                'Education',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 16),
           Text(
-            value,
+            '${qualificationParagraphs.join('. ')}.',
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: color,
+              color: Colors.grey[700],
+              height: 1.6,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.left,
           ),
         ],
       ),
@@ -400,10 +439,10 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.info, size: 24, color: Colors.black),
+              Icon(Icons.person, size: 24, color: Colors.black),
               const SizedBox(width: 8),
               const Text(
-                'About',
+                'Professional Summary',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -422,45 +461,6 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             ),
             textAlign: TextAlign.left,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQualificationsSection() {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(24),
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Qualifications',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...provider!.qualifications.map((qual) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green[600], size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      qual,
-                      style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
         ],
       ),
     );
@@ -1171,25 +1171,20 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
           ),
           const SizedBox(height: 16),
           ...provider!.certifications.map((certification) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange[200]!),
-              ),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.orange[700], size: 24),
+                  Icon(Icons.verified, color: Colors.green[600], size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       certification,
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.orange[900],
-                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[800],
+                        height: 1.5,
                       ),
                     ),
                   ),

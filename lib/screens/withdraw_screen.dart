@@ -273,19 +273,32 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   Future<void> _processWithdrawal() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final amount = double.parse(_amountController.text);
+
+    // Show M-Pesa phone number dialog if M-Pesa is selected
+    if (_selectedMethod == PaymentMethod.mpesa) {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => _MpesaWithdrawalDialog(amount: amount),
+      );
+
+      if (result == true && mounted) {
+        widget.onTransactionComplete();
+        Navigator.pop(context);
+      }
+      return;
+    }
+
+    // For bank transfer, process directly
     setState(() => _isProcessing = true);
 
     try {
-      final amount = double.parse(_amountController.text);
-
       final transaction = await WalletService.createTransaction(
         type: TransactionType.withdrawal,
         paymentMethod: _selectedMethod,
         amount: amount,
         description: 'Wallet Withdrawal',
-        reference: _selectedMethod == PaymentMethod.mpesa
-            ? 'M-Pesa Withdrawal'
-            : 'Bank Withdrawal',
+        reference: 'Bank Withdrawal',
       );
 
       final success = await WalletService.processTransaction(transaction.id);
@@ -296,7 +309,124 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Withdrawal successful! KES ${amount.toStringAsFixed(2)} will be sent to your ${_selectedMethod.name}.',
+              'Withdrawal successful! KES ${amount.toStringAsFixed(2)} will be sent to your bank account.',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Withdrawal failed. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+}
+
+// M-Pesa Withdrawal Dialog
+class _MpesaWithdrawalDialog extends StatefulWidget {
+  final double amount;
+
+  const _MpesaWithdrawalDialog({required this.amount});
+
+  @override
+  State<_MpesaWithdrawalDialog> createState() => _MpesaWithdrawalDialogState();
+}
+
+class _MpesaWithdrawalDialogState extends State<_MpesaWithdrawalDialog> {
+  final _phoneController = TextEditingController();
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('M-Pesa Withdrawal'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Amount: KES ${widget.amount.toStringAsFixed(2)}'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'M-Pesa Phone Number',
+              hintText: '254712345678',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Funds will be sent to this M-Pesa number.',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isProcessing ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _isProcessing ? null : _processMpesaWithdrawal,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+          ),
+          child: _isProcessing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text('Withdraw'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _processMpesaWithdrawal() async {
+    if (_phoneController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your phone number')),
+      );
+      return;
+    }
+
+    setState(() => _isProcessing = true);
+
+    try {
+      final transaction = await WalletService.createTransaction(
+        type: TransactionType.withdrawal,
+        paymentMethod: PaymentMethod.mpesa,
+        amount: widget.amount,
+        description: 'M-Pesa Withdrawal',
+        reference: 'M-Pesa: ${_phoneController.text}',
+      );
+
+      final success = await WalletService.processTransaction(transaction.id);
+
+      if (success && mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Withdrawal successful! KES ${widget.amount.toStringAsFixed(2)} will be sent to ${_phoneController.text}.',
             ),
             backgroundColor: Colors.green,
           ),

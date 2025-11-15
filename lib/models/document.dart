@@ -7,7 +7,7 @@ enum DocumentType {
   dischargeSummary,
   vaccinationRecord,
 
-  // Provider verification documents (for provider registration)
+  // Business account verification documents (for business account registration)
   medicalLicense,
   professionalCertification,
   validId,

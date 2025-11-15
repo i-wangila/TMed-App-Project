@@ -27,28 +27,8 @@ class _ProviderInboxScreenState extends State<ProviderInboxScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter messages to only show:
-    // 1. Appointment-related system notifications (cancellations, scheduled)
-    // 2. General system notifications (approval, rejection, important alerts)
-    // 3. Patient chats (healthcare provider messages)
-    final allMessages = MessageService.getAllMessages();
-    final messages = allMessages.where((message) {
-      // Show all healthcare provider messages (patient chats)
-      if (message.isHealthcareProviderMessage) {
-        return true;
-      }
-      // Show appointment-related system notifications
-      if (message.isSystemNotification &&
-          message.type == MessageType.appointment) {
-        return true;
-      }
-      // Show general system notifications (approval, rejection, etc.)
-      if (message.isSystemNotification && message.type == MessageType.system) {
-        return true;
-      }
-      // Filter out other notification types (prescriptions, lab results, etc.)
-      return false;
-    }).toList();
+    // Get only provider role messages for provider inbox
+    final messages = MessageService.getProviderMessages();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

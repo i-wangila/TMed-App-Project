@@ -93,7 +93,7 @@ class _EditProviderBasicInfoScreenState
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Changes will be reflected immediately in your provider profile visible to patients.',
+                              'Changes will be reflected immediately in your business profile visible to patients.',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.blue[900],

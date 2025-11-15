@@ -63,7 +63,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         ),
         const SizedBox(height: 24),
         const Text(
-          'Become a Healthcare Provider',
+          'Create a Healthcare Business Account',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -73,7 +73,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Join Klinate\'s network of healthcare professionals and facilities. Connect with patients, grow your practice, and make healthcare more accessible.',
+          'Join Klinate\'s network of healthcare professionals and facilities. Create your business account to connect with patients, grow your practice, and make healthcare more accessible.',
           style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.4),
         ),
       ],
@@ -181,25 +181,45 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
         'number': '1',
         'title': 'Choose Your Service Type',
         'description':
-            'Select whether you\'re an individual provider or healthcare facility',
+            'Select whether you\'re a healthcare professional or healthcare facility',
       },
       {
         'number': '2',
-        'title': 'Complete Your Profile',
+        'title': 'Basic Information',
         'description':
-            'Add your qualifications, services, and professional information',
+            'Add your name, professional headline, and location details',
       },
       {
         'number': '3',
-        'title': 'Verify Your Credentials',
+        'title': 'Professional Summary',
         'description':
-            'Upload required licenses and certifications for verification',
+            'Write your bio and describe your professional background',
       },
       {
         'number': '4',
-        'title': 'Start Accepting Patients',
+        'title': 'Work Experience',
+        'description': 'Add your work history, positions, and organizations',
+      },
+      {
+        'number': '5',
+        'title': 'Education & Qualifications',
+        'description': 'List your academic qualifications and degrees',
+      },
+      {
+        'number': '6',
+        'title': 'Licenses & Certifications',
+        'description': 'Add your professional licenses and certifications',
+      },
+      {
+        'number': '7',
+        'title': 'Services & Availability',
         'description':
-            'Set your availability and begin receiving appointment requests',
+            'Set services, fees, insurance, payments, and working hours',
+      },
+      {
+        'number': '8',
+        'title': 'Documents & Verification',
+        'description': 'Upload credentials and submit for admin approval',
       },
     ];
 
@@ -329,49 +349,20 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Healthcare providers on Klinate earn competitive rates:',
-            style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            'Healthcare professionals and facilities on Klinate earn competitive rates.',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[800],
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          const SizedBox(height: 12),
-          _buildEarningItem(
-            'Video Consultations',
-            'KES 1,500 - 3,000 per session',
-          ),
-          _buildEarningItem('In-person Visits', 'KES 2,000 - 5,000 per visit'),
-          _buildEarningItem(
-            'Specialized Services',
-            'KES 3,000 - 10,000+ per session',
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             '* Earnings vary based on specialization, experience, and service type',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: Colors.grey[600],
               fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEarningItem(String service, String amount) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            service,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-          Text(
-            amount,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.green[700],
             ),
           ),
         ],
@@ -417,7 +408,7 @@ class _BecomeProviderScreenState extends State<BecomeProviderScreen> {
     return Column(
       children: [
         Text(
-          'By continuing, you agree to Klinate\'s Terms of Service and Privacy Policy for Healthcare Providers.',
+          'By continuing, you agree to Klinate\'s Terms of Service and Privacy Policy for Business Accounts.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4),
         ),

@@ -51,10 +51,10 @@ class ApprovalService {
 
         // Send approval notification to provider
         await MessageService.addSystemNotification(
-          '🎉 Congratulations! Your Provider Account Has Been Approved!\n\n'
+          '🎉 Congratulations! Your Business Account Has Been Approved!\n\n'
           'Welcome to Klinate Healthcare Network! Your application has been approved and you can now offer healthcare services online.\n\n'
-          '✨ Your Provider Features:\n\n'
-          '📊 Provider Dashboard\n'
+          '✨ Your Business Account Features:\n\n'
+          '📊 Business Dashboard\n'
           '• View your performance metrics and statistics\n'
           '• Track appointments and patient interactions\n'
           '• Monitor your ratings and reviews\n\n'
@@ -78,7 +78,7 @@ class ApprovalService {
           '• Update your profile and services\n'
           '• Manage your availability\n'
           '• Control notification preferences\n\n'
-          'To get started, switch to your Provider Dashboard using the role switcher in the navigation bar.\n\n'
+          'To get started, switch to your Business Dashboard using the role switcher in the navigation bar.\n\n'
           'Thank you for joining Klinate! We look forward to serving patients together.',
           MessageType.system,
         );

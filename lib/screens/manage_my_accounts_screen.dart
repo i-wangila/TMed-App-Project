@@ -112,12 +112,12 @@ class _ManageMyAccountsScreenState extends State<ManageMyAccountsScreen> {
                             },
                           ),
 
-                          // Provider Accounts - Only if approved provider (middle)
+                          // Business Accounts - Only if approved (middle)
                           if (_providerProfiles.isNotEmpty)
                             ..._providerProfiles.map(
                               (profile) => _buildAccountCard(
-                                icon: Icons.medical_services,
-                                title: 'Provider Account',
+                                icon: Icons.business,
+                                title: 'Business Account',
                                 subtitle: profile.providerType.displayName,
                                 description:
                                     profile.specialization ?? 'Healthcare',
@@ -309,7 +309,7 @@ class _ManageMyAccountsScreenState extends State<ManageMyAccountsScreen> {
           ),
           if (_providerProfiles.isNotEmpty)
             _buildInfoItem(
-              '🏥 Provider Account',
+              '🏥 Business Account',
               'Manage your healthcare services and appointments',
             ),
           if (_isAdmin)

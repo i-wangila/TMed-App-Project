@@ -38,7 +38,7 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
-          'Approved Providers',
+          'Approved Business Accounts',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -74,7 +74,7 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
           Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No Approved Providers',
+            'No Approved Business Accounts',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -83,7 +83,7 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Approved providers will appear here',
+            'Approved business accounts will appear here',
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
@@ -247,9 +247,9 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Suspend Provider'),
+        title: const Text('Suspend Business Account'),
         content: const Text(
-          'Are you sure you want to suspend this provider? They will lose access to their provider dashboard.',
+          'Are you sure you want to suspend this business account? They will lose access to their business dashboard.',
         ),
         actions: [
           TextButton(
@@ -258,7 +258,9 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
               await ApprovalService.suspendProvider(
                 provider.id,
                 UserService.currentUser!.id,
@@ -266,9 +268,9 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
               );
               _loadApprovedProviders();
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(
-                    content: Text('Provider suspended successfully'),
+                    content: Text('Business account suspended successfully'),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -288,7 +290,9 @@ class _ApprovedProvidersScreenState extends State<ApprovedProvidersScreen> {
   void _viewDetails(ProviderProfile provider) {
     // Navigate to provider profile or details screen
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('View provider details - Coming soon')),
+      const SnackBar(
+        content: Text('View business account details - Coming soon'),
+      ),
     );
   }
 }

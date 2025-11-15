@@ -47,11 +47,20 @@ class _DocumentManagementScreenState extends State<DocumentManagementScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDocuments,
-              child: _documents.isEmpty
-                  ? _buildEmptyState()
-                  : _buildDocumentsList(),
+          : SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadDocuments,
+                child: _documents.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          const SizedBox(height: 60),
+                          _buildEmptyState(),
+                          SizedBox(height: MediaQuery.of(context).padding.bottom + 60),
+                        ],
+                      )
+                    : _buildDocumentsList(),
+              ),
             ),
     );
   }
@@ -112,7 +121,10 @@ class _DocumentManagementScreenState extends State<DocumentManagementScreen> {
         .toList();
 
     return SingleChildScrollView(
-      padding: ResponsiveUtils.getResponsivePadding(context),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: ResponsiveUtils.getResponsivePadding(context).add(
+        EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

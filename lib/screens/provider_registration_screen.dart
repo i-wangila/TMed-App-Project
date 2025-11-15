@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../models/provider_type.dart';
 import '../models/document.dart';
 import '../models/user_profile.dart';
 import '../models/provider_profile.dart';
+import '../models/academic_qualification.dart';
+import '../models/work_experience.dart';
 import '../services/healthcare_provider_service.dart';
 import '../services/healthcare_facility_service.dart';
 import '../services/document_service.dart';
@@ -29,47 +28,78 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  final int _totalSteps = 4;
+  final int _totalSteps = 8;
   bool _isLoading = false;
 
   // Form controllers
   final _basicInfoFormKey = GlobalKey<FormState>();
-  final _professionalInfoFormKey = GlobalKey<FormState>();
+  final _aboutFormKey = GlobalKey<FormState>();
+  final _experienceFormKey = GlobalKey<FormState>();
+  final _educationFormKey = GlobalKey<FormState>();
+  final _certificationsFormKey = GlobalKey<FormState>();
+  final _servicesFormKey = GlobalKey<FormState>();
+  final _contactFormKey = GlobalKey<FormState>();
 
-  // Basic Info
+  // Step 1: Basic Information (Name, Title, Location)
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
+  final _headlineController = TextEditingController(); // Professional headline
+  final _cityController = TextEditingController();
+  final _countryController = TextEditingController();
 
-  // Professional Info
-  final _specializationController = TextEditingController();
-  final _experienceController = TextEditingController();
+  // Step 2: About (Professional Summary)
   final _bioController = TextEditingController();
-  final _consultationFeeController = TextEditingController();
-  final _servicesDescriptionController = TextEditingController();
 
+  // Step 3: Experience (Work History)
+  final _jobTitleController = TextEditingController();
+  final _organizationController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _startMonthController = TextEditingController();
+  final _startYearController = TextEditingController();
+  final _endMonthController = TextEditingController();
+  final _endYearController = TextEditingController();
+  final _experienceDescriptionController = TextEditingController();
+  bool _isCurrentPosition = false;
+  final List<WorkExperience> _workExperiences = [];
+
+  // Step 4: Education (Academic Qualifications)
+  String _selectedTitle = 'Dr.';
+  String _selectedEducationLevel = 'Bachelor\'s Degree';
+  String _selectedSpecialization = 'General';
+  final _institutionController = TextEditingController();
+  final _yearCompletedController = TextEditingController();
+  final _fieldOfStudyController = TextEditingController();
+  final List<AcademicQualification> _academicQualifications = [];
+
+  // Step 5: Licenses & Certifications
+  final _certificationNameController = TextEditingController();
+  final _certificationIssuerController = TextEditingController();
+  final _certificationYearController = TextEditingController();
+  final List<Map<String, String>> _certifications = [];
+
+  // Step 6: Services & Skills
+  final _servicesDescriptionController = TextEditingController();
+  final _consultationFeeController = TextEditingController();
   final List<String> _selectedServices = [];
   final List<String> _selectedLanguages = [];
   final List<String> _selectedInsurance = [];
   final List<String> _selectedPaymentMethods = [];
+  final List<String> _workingDays = [];
+  final Map<String, Map<String, String>> _workingHours = {};
 
-  // M-Pesa payment details
+  // Step 7: Contact Information
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _physicalAddressController = TextEditingController();
+  final _poBoxController = TextEditingController();
+
+  // Payment details
   final _mpesaPaybillController = TextEditingController();
   final _mpesaAccountController = TextEditingController();
   final _mpesaTillController = TextEditingController();
-
-  // Bank transfer details
   final _bankNameController = TextEditingController();
   final _bankAccountController = TextEditingController();
 
-  final List<String> _workingDays = [];
-  final Map<String, Map<String, String>> _workingHours =
-      {}; // day -> {start, end}
-  final List<String> _profileImages = []; // Store image paths
-  final ImagePicker _picker = ImagePicker();
-
-  // Documents
+  // Step 8: Documents
   final List<Document> _uploadedDocuments = [];
 
   @override
@@ -131,7 +161,12 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildBasicInfoStep(),
-                _buildProfessionalInfoStep(),
+                _buildAboutStep(),
+                _buildExperienceStep(),
+                _buildEducationStep(),
+                _buildCertificationsStep(),
+                _buildServicesStep(),
+                _buildContactStep(),
                 _buildDocumentsStep(),
                 _buildReviewStep(),
               ],
@@ -231,47 +266,39 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             ),
             const SizedBox(height: 20),
             _buildTextField(
-              controller: _emailController,
-              label: 'Email Address',
-              hint: 'john.doe@example.com',
-              icon: Icons.email,
-              keyboardType: TextInputType.emailAddress,
+              controller: _headlineController,
+              label: 'Professional Headline',
+              hint: 'e.g., Cardiologist at City Hospital',
+              icon: Icons.work_outline,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
+                  return 'Please enter your professional headline';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 20),
             _buildTextField(
-              controller: _phoneController,
-              label: 'Phone Number',
-              hint: '+254740109195',
-              icon: Icons.phone,
-              keyboardType: TextInputType.phone,
+              controller: _cityController,
+              label: 'City',
+              hint: 'Nairobi',
+              icon: Icons.location_city,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your phone number';
+                  return 'Please enter your city';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 20),
             _buildTextField(
-              controller: _addressController,
-              label: widget.providerType.category == ProviderCategory.individual
-                  ? 'Practice Address'
-                  : 'Facility Address',
-              hint: 'Nairobi, Kenya',
-              icon: Icons.location_on,
-              maxLines: 2,
+              controller: _countryController,
+              label: 'Country',
+              hint: 'Kenya',
+              icon: Icons.public,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your address';
+                  return 'Please enter your country';
                 }
                 return null;
               },
@@ -282,16 +309,16 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     );
   }
 
-  Widget _buildProfessionalInfoStep() {
+  Widget _buildAboutStep() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Form(
-        key: _professionalInfoFormKey,
+        key: _aboutFormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Professional Details',
+              'About',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -300,37 +327,729 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Tell us about your professional background',
+              'Write a professional summary about yourself',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 32),
             _buildTextField(
-              controller: _specializationController,
-              label: 'Specialization',
-              hint: 'Cardiology, General Practice, etc.',
-              icon: Icons.medical_services,
+              controller: _bioController,
+              label: 'Professional Summary',
+              hint:
+                  'Dedicated healthcare professional committed to providing quality care...',
+              icon: Icons.description,
+              maxLines: 8,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your specialization';
+                  return 'Please enter your professional summary';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExperienceStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _experienceFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Experience',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add your work experience',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            _buildTextField(
+              controller: _jobTitleController,
+              label: 'Job Title',
+              hint: 'e.g., Senior Cardiologist',
+              icon: Icons.work,
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _organizationController,
+              label: 'Organization',
+              hint: 'e.g., City Hospital',
+              icon: Icons.business,
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _locationController,
+              label: 'Location (Optional)',
+              hint: 'e.g., Nairobi, Kenya',
+              icon: Icons.location_on,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: _startMonthController,
+                    label: 'Start Month',
+                    hint: 'MM',
+                    icon: Icons.calendar_today,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    controller: _startYearController,
+                    label: 'Start Year',
+                    hint: 'YYYY',
+                    icon: Icons.calendar_today,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            CheckboxListTile(
+              title: const Text('I currently work here'),
+              value: _isCurrentPosition,
+              onChanged: (value) {
+                setState(() {
+                  _isCurrentPosition = value ?? false;
+                });
+              },
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (!_isCurrentPosition) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _endMonthController,
+                      label: 'End Month',
+                      hint: 'MM',
+                      icon: Icons.calendar_today,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _endYearController,
+                      label: 'End Year',
+                      hint: 'YYYY',
+                      icon: Icons.calendar_today,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _experienceDescriptionController,
+              label: 'Description (Optional)',
+              hint: 'Describe your responsibilities and achievements...',
+              icon: Icons.description,
+              maxLines: 4,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _addExperience,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Experience'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: Colors.blue, width: 2),
+                  foregroundColor: Colors.blue,
+                ),
+              ),
+            ),
+            if (_workExperiences.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Added Experience',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              ..._workExperiences.map((exp) => _buildExperienceCard(exp)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addExperience() {
+    if (_jobTitleController.text.trim().isEmpty ||
+        _organizationController.text.trim().isEmpty) {
+      _showSnackBar('Please enter job title and organization');
+      return;
+    }
+
+    try {
+      final startMonth = int.parse(_startMonthController.text.trim());
+      final startYear = int.parse(_startYearController.text.trim());
+
+      DateTime? endDate;
+      if (!_isCurrentPosition) {
+        final endMonth = int.parse(_endMonthController.text.trim());
+        final endYear = int.parse(_endYearController.text.trim());
+        endDate = DateTime(endYear, endMonth);
+      }
+
+      final experience = WorkExperience(
+        jobTitle: _jobTitleController.text.trim(),
+        organization: _organizationController.text.trim(),
+        location: _locationController.text.trim().isEmpty
+            ? null
+            : _locationController.text.trim(),
+        startDate: DateTime(startYear, startMonth),
+        endDate: endDate,
+        description: _experienceDescriptionController.text.trim().isEmpty
+            ? null
+            : _experienceDescriptionController.text.trim(),
+        isCurrentPosition: _isCurrentPosition,
+      );
+
+      setState(() {
+        _workExperiences.add(experience);
+        _jobTitleController.clear();
+        _organizationController.clear();
+        _locationController.clear();
+        _startMonthController.clear();
+        _startYearController.clear();
+        _endMonthController.clear();
+        _endYearController.clear();
+        _experienceDescriptionController.clear();
+        _isCurrentPosition = false;
+      });
+
+      _showSnackBar('Experience added successfully');
+    } catch (e) {
+      _showSnackBar('Please enter valid dates');
+    }
+  }
+
+  Widget _buildExperienceCard(WorkExperience exp) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.work, color: Colors.blue[600], size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exp.jobTitle,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  exp.organization,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  exp.duration,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _workExperiences.remove(exp);
+              });
+              _showSnackBar('Experience removed');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _educationFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Academic Qualifications',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tell us about your academic background and achievements',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            _buildDropdownField(
+              label: 'Professional Title',
+              value: _selectedTitle,
+              items: ['Dr.', 'Prof.', 'Mr.', 'Mrs.', 'Ms.', 'N/A'],
+              onChanged: (value) {
+                setState(() {
+                  _selectedTitle = value!;
+                });
+              },
+              icon: Icons.person_outline,
+            ),
+            const SizedBox(height: 20),
+            _buildDropdownField(
+              label: 'Education Level',
+              value: _selectedEducationLevel,
+              items: [
+                'Certificate',
+                'Diploma',
+                'Bachelor\'s Degree',
+                'Master\'s Degree',
+                'PhD',
+                'N/A',
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedEducationLevel = value!;
+                });
+              },
+              icon: Icons.school,
+            ),
+            const SizedBox(height: 20),
+            _buildDropdownField(
+              label: 'Specialization',
+              value: _selectedSpecialization,
+              items: [
+                'General',
+                'Pathologist',
+                'Cardiologist',
+                'Dermatologist',
+                'Pediatrician',
+                'Surgeon',
+                'Psychiatrist',
+                'Radiologist',
+                'Anesthesiologist',
+                'Oncologist',
+                'Neurologist',
+                'Orthopedic Surgeon',
+                'Gynecologist',
+                'Ophthalmologist',
+                'N/A',
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedSpecialization = value!;
+                });
+              },
+              icon: Icons.medical_services,
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _fieldOfStudyController,
+              label: 'Field of Study (Optional)',
+              hint: 'e.g., Medicine, Nursing, Public Health',
+              icon: Icons.book,
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _institutionController,
+              label: 'Institution/University (Optional)',
+              hint: 'e.g., University of Nairobi',
+              icon: Icons.account_balance,
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _yearCompletedController,
+              label: 'Year Completed (Optional)',
+              hint: 'e.g., 2020',
+              icon: Icons.calendar_today,
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _addQualification,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Qualification'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: Colors.blue, width: 2),
+                  foregroundColor: Colors.blue,
+                ),
+              ),
+            ),
+            if (_academicQualifications.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Added Qualifications',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              ..._academicQualifications.map(
+                (qual) => _buildQualificationCard(qual),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addQualification() {
+    final qualification = AcademicQualification(
+      title: _selectedTitle,
+      educationLevel: _selectedEducationLevel,
+      specialization: _selectedSpecialization,
+      institution: _institutionController.text.trim().isEmpty
+          ? null
+          : _institutionController.text.trim(),
+      yearCompleted: _yearCompletedController.text.trim().isEmpty
+          ? null
+          : int.tryParse(_yearCompletedController.text.trim()),
+      fieldOfStudy: _fieldOfStudyController.text.trim().isEmpty
+          ? null
+          : _fieldOfStudyController.text.trim(),
+    );
+
+    setState(() {
+      _academicQualifications.add(qualification);
+      // Clear optional fields
+      _institutionController.clear();
+      _yearCompletedController.clear();
+      _fieldOfStudyController.clear();
+    });
+
+    _showSnackBar('Qualification added successfully');
+  }
+
+  Widget _buildQualificationCard(AcademicQualification qual) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.school, color: Colors.blue[600], size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${qual.title} - ${qual.educationLevel}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Specialization: ${qual.specialization}',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                ),
+                if (qual.fieldOfStudy != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Field: ${qual.fieldOfStudy}',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ],
+                if (qual.institution != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    qual.institution!,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+                if (qual.yearCompleted != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Completed: ${qual.yearCompleted}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _academicQualifications.remove(qual);
+              });
+              _showSnackBar('Qualification removed');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    required IconData icon,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.grey[600]),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.black),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
+      ),
+      items: items.map((item) {
+        return DropdownMenuItem(value: item, child: Text(item));
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildCertificationsStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _certificationsFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Certifications & Accreditations',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add your professional certifications and accreditations',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            _buildTextField(
+              controller: _certificationNameController,
+              label: 'Certification/Accreditation Name',
+              hint: 'e.g., Board Certified in Internal Medicine',
+              icon: Icons.verified,
+              validator: (value) {
+                if (_certifications.isEmpty &&
+                    (value == null || value.isEmpty)) {
+                  return 'Please add at least one certification';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 20),
             _buildTextField(
-              controller: _experienceController,
-              label: 'Years of Experience',
-              hint: '5',
-              icon: Icons.work,
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your experience';
-                }
-                return null;
-              },
+              controller: _certificationIssuerController,
+              label: 'Issuing Organization',
+              hint: 'e.g., Medical Board of Kenya',
+              icon: Icons.business,
             ),
             const SizedBox(height: 20),
+            _buildTextField(
+              controller: _certificationYearController,
+              label: 'Year Obtained',
+              hint: 'e.g., 2020',
+              icon: Icons.calendar_today,
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _addCertification,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Certification'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: Colors.blue, width: 2),
+                  foregroundColor: Colors.blue,
+                ),
+              ),
+            ),
+            if (_certifications.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              const Text(
+                'Added Certifications',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              ..._certifications.map((cert) => _buildCertificationCard(cert)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addCertification() {
+    if (_certificationNameController.text.trim().isEmpty) {
+      _showSnackBar('Please enter certification name');
+      return;
+    }
+
+    final certification = {
+      'name': _certificationNameController.text.trim(),
+      'issuer': _certificationIssuerController.text.trim(),
+      'year': _certificationYearController.text.trim(),
+    };
+
+    setState(() {
+      _certifications.add(certification);
+      _certificationNameController.clear();
+      _certificationIssuerController.clear();
+      _certificationYearController.clear();
+    });
+
+    _showSnackBar('Certification added successfully');
+  }
+
+  Widget _buildCertificationCard(Map<String, String> cert) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.verified, color: Colors.green[600], size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  cert['name']!,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (cert['issuer']!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    cert['issuer']!,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ],
+                if (cert['year']!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Year: ${cert['year']}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _certifications.remove(cert);
+              });
+              _showSnackBar('Certification removed');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicesStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _servicesFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Services & Skills',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tell us about the services you offer',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
             _buildTextField(
               controller: _consultationFeeController,
               label: 'Consultation Fee (KES)',
@@ -368,8 +1087,85 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             _buildPaymentMethodsSection(),
             const SizedBox(height: 24),
             _buildWorkingDaysSection(),
-            const SizedBox(height: 24),
-            _buildProfileImagesSection(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactStep() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _contactFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Contact Information',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Provide your contact details',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email Address',
+              hint: 'john.doe@example.com',
+              icon: Icons.email,
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                if (!value.contains('@')) {
+                  return 'Please enter a valid email';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _phoneController,
+              label: 'Phone Number',
+              hint: '+254740109195',
+              icon: Icons.phone,
+              keyboardType: TextInputType.phone,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your phone number';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _physicalAddressController,
+              label: 'Physical Address',
+              hint: 'Building name, Street, Area',
+              icon: Icons.location_on,
+              maxLines: 2,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your physical address';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _poBoxController,
+              label: 'P.O. Box Number (Optional)',
+              hint: 'P.O. Box 12345-00100',
+              icon: Icons.markunread_mailbox,
+            ),
           ],
         ),
       ),
@@ -459,33 +1255,33 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 32),
-          _buildReviewSection('Basic Information', [
-            'Name: ${_nameController.text}',
-            'Email: ${_emailController.text}',
-            'Phone: ${_phoneController.text}',
-            'Address: ${_addressController.text}',
-          ]),
+          _buildAcademicQualificationsReviewSection(),
           const SizedBox(height: 20),
-          _buildReviewSection('Professional Details', [
-            'Specialization: ${_specializationController.text}',
-            'Experience: ${_experienceController.text} years',
+          _buildCertificationsReviewSection(),
+          const SizedBox(height: 20),
+          _buildReviewSection('Services & Skills', [
             'Consultation Fee: KES ${_consultationFeeController.text}',
             'Services: ${_selectedServices.join(', ')}',
             'Languages: ${_selectedLanguages.join(', ')}',
+            'Working Days: ${_workingDays.join(', ')}',
           ]),
           const SizedBox(height: 20),
           _buildWorkingHoursReviewSection(),
+          const SizedBox(height: 20),
+          _buildReviewSection('Address Information', [
+            'Name: ${_nameController.text}',
+            'Email: ${_emailController.text}',
+            'Phone: ${_phoneController.text}',
+            'Physical Address: ${_physicalAddressController.text}',
+            'City: ${_cityController.text}',
+            if (_poBoxController.text.isNotEmpty)
+              'P.O. Box: ${_poBoxController.text}',
+          ]),
           const SizedBox(height: 20),
           _buildReviewSection('Documents', [
             'Uploaded: ${_uploadedDocuments.length}/${widget.providerType.requirements.length} documents',
             'Approved: ${_uploadedDocuments.where((doc) => doc.status == DocumentStatus.approved).length} documents',
             'Pending: ${_uploadedDocuments.where((doc) => doc.status == DocumentStatus.pending).length} documents',
-          ]),
-          const SizedBox(height: 20),
-          _buildReviewSection('Profile/Premise Image', [
-            _profileImages.isNotEmpty
-                ? '1 image uploaded'
-                : 'Using current profile picture',
           ]),
           const SizedBox(height: 32),
           Container(
@@ -1072,108 +1868,6 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     }
   }
 
-  Widget _buildProfileImagesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Profile/Premise Image',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Upload one image that will appear on your provider card on the patient home screen. This can be your professional photo or your facility/premise.',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 16),
-        if (_profileImages.isNotEmpty)
-          Container(
-            width: double.infinity,
-            height: 200,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-              image: DecorationImage(
-                image: kIsWeb
-                    ? NetworkImage(_profileImages[0])
-                    : FileImage(File(_profileImages[0])) as ImageProvider,
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _profileImages.clear();
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: _profileImages.isEmpty ? _pickProfileImage : null,
-          icon: const Icon(Icons.add_photo_alternate),
-          label: Text(
-            _profileImages.isEmpty
-                ? 'Upload Profile/Premise Image'
-                : 'Image Uploaded',
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.blue,
-            side: const BorderSide(color: Colors.blue),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          ),
-        ),
-        if (_profileImages.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'To change the image, remove the current one first',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Future<void> _pickProfileImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        setState(() {
-          _profileImages.add(image.path);
-        });
-      }
-    } catch (e) {
-      _showSnackBar('Failed to pick image: ${e.toString()}');
-    }
-  }
-
   Widget _buildDocumentUploadCard(String documentType) {
     // Find all documents for this type
     final documents = _uploadedDocuments
@@ -1407,6 +2101,137 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     );
   }
 
+  Widget _buildAcademicQualificationsReviewSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.school, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Academic Qualifications',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_academicQualifications.isEmpty)
+            Text(
+              'No qualifications added',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            )
+          else
+            ..._academicQualifications.map((qual) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${qual.title} - ${qual.educationLevel}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Specialization: ${qual.specialization}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                    ),
+                    if (qual.fieldOfStudy != null)
+                      Text(
+                        'Field: ${qual.fieldOfStudy}',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    if (qual.institution != null)
+                      Text(
+                        qual.institution!,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    if (qual.yearCompleted != null)
+                      Text(
+                        'Completed: ${qual.yearCompleted}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCertificationsReviewSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Certifications & Accreditations',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_certifications.isEmpty)
+            Text(
+              'No certifications added',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            )
+          else
+            ..._certifications.map((cert) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      cert['name']!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (cert['issuer']!.isNotEmpty)
+                      Text(
+                        cert['issuer']!,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    if (cert['year']!.isNotEmpty)
+                      Text(
+                        'Year: ${cert['year']}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildWorkingHoursReviewSection() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1544,11 +2369,32 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
       // Validate current step
       bool isValid = false;
       switch (_currentStep) {
-        case 0:
+        case 0: // Basic Information
           isValid = _basicInfoFormKey.currentState?.validate() ?? false;
           break;
-        case 1:
-          isValid = _professionalInfoFormKey.currentState?.validate() ?? false;
+        case 1: // About
+          isValid = _aboutFormKey.currentState?.validate() ?? false;
+          break;
+        case 2: // Experience
+          isValid = _experienceFormKey.currentState?.validate() ?? false;
+          // Experience is optional, so no validation needed
+          break;
+        case 3: // Education
+          isValid = _educationFormKey.currentState?.validate() ?? false;
+          if (isValid && _academicQualifications.isEmpty) {
+            _showSnackBar('Please add at least one academic qualification');
+            isValid = false;
+          }
+          break;
+        case 4: // Certifications
+          isValid = _certificationsFormKey.currentState?.validate() ?? false;
+          if (isValid && _certifications.isEmpty) {
+            _showSnackBar('Please add at least one certification');
+            isValid = false;
+          }
+          break;
+        case 5: // Services & Skills
+          isValid = _servicesFormKey.currentState?.validate() ?? false;
           if (isValid &&
               _selectedServices.isEmpty &&
               _servicesDescriptionController.text.trim().isEmpty) {
@@ -1566,7 +2412,10 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
             isValid = false;
           }
           break;
-        case 2:
+        case 6: // Contact Information
+          isValid = _contactFormKey.currentState?.validate() ?? false;
+          break;
+        case 7: // Documents
           // Check if at least one document is uploaded for each required type
           final requiredTypes = widget.providerType.requirements;
           final missingTypes = <String>[];
@@ -1732,15 +2581,21 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
         }
       }
 
+      // Build full address with P.O. Box if provided
+      String fullAddress = _physicalAddressController.text.trim();
+      if (_poBoxController.text.trim().isNotEmpty) {
+        fullAddress += '\n${_poBoxController.text.trim()}';
+      }
+
       // Create BusinessPremises if name, phone, and address are provided
       BusinessPremises? premises;
       if (_nameController.text.trim().isNotEmpty &&
           _phoneController.text.trim().isNotEmpty &&
-          _addressController.text.trim().isNotEmpty) {
+          _physicalAddressController.text.trim().isNotEmpty) {
         premises = BusinessPremises(
           name: _nameController.text.trim(),
-          address: _addressController.text.trim(),
-          city: 'Nairobi', // Default city, can be updated later
+          address: fullAddress,
+          city: _cityController.text.trim(),
           country: 'Kenya',
           phone: _phoneController.text.trim(),
           email: _emailController.text.trim(),
@@ -1748,17 +2603,43 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
         );
       }
 
+      // Convert certifications to list of strings
+      final List<String> certificationsList = _certifications.map((cert) {
+        String certStr = cert['name']!;
+        if (cert['issuer']!.isNotEmpty) {
+          certStr += ' - ${cert['issuer']}';
+        }
+        if (cert['year']!.isNotEmpty) {
+          certStr += ' (${cert['year']})';
+        }
+        return certStr;
+      }).toList();
+
+      // Get primary specialization from academic qualifications
+      String? primarySpecialization;
+      if (_academicQualifications.isNotEmpty) {
+        primarySpecialization = _academicQualifications.first.specialization;
+      }
+
       // Create ProviderProfile
+      // Calculate total experience years from work history
+      int totalExperienceYears = 0;
+      for (final exp in _workExperiences) {
+        totalExperienceYears += (exp.totalMonths / 12).ceil();
+      }
+
       final providerProfile = ProviderProfile(
         userId: currentUser.id,
         providerType: providerRole,
         status: ProviderStatus.pending, // Pending verification
-        specialization: _specializationController.text.trim(),
+        specialization: primarySpecialization,
         servicesOffered: _selectedServices,
         servicesDescription: _servicesDescriptionController.text.trim(),
-        profileImages: _profileImages,
-        experienceYears: int.tryParse(_experienceController.text),
+        experienceYears: totalExperienceYears > 0 ? totalExperienceYears : null,
         bio: _bioController.text.trim(),
+        workExperience: _workExperiences,
+        academicQualifications: _academicQualifications,
+        certifications: certificationsList,
         languages: _selectedLanguages,
         insuranceAccepted: _selectedInsurance,
         paymentMethods: _buildPaymentMethodsString(),
@@ -1787,9 +2668,9 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
               name: _nameController.text,
               email: _emailController.text,
               phone: _phoneController.text,
-              address: _addressController.text,
-              specialization: _specializationController.text,
-              experienceYears: int.tryParse(_experienceController.text) ?? 0,
+              address: fullAddress,
+              specialization: primarySpecialization ?? 'General',
+              experienceYears: totalExperienceYears,
               bio: _bioController.text,
               consultationFee:
                   double.tryParse(_consultationFeeController.text) ?? 0.0,
@@ -1808,8 +2689,8 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
               name: _nameController.text,
               email: _emailController.text,
               phone: _phoneController.text,
-              address: _addressController.text,
-              specialization: _specializationController.text,
+              address: fullAddress,
+              specialization: primarySpecialization ?? 'General',
               bio: _bioController.text,
               services: _selectedServices,
               workingDays: _workingDays,
@@ -2072,13 +2953,35 @@ class _ProviderRegistrationScreenState extends State<ProviderRegistrationScreen>
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     _nameController.dispose();
+    _headlineController.dispose();
+    _cityController.dispose();
+    _countryController.dispose();
+    _bioController.dispose();
+    _jobTitleController.dispose();
+    _organizationController.dispose();
+    _locationController.dispose();
+    _startMonthController.dispose();
+    _startYearController.dispose();
+    _endMonthController.dispose();
+    _endYearController.dispose();
+    _experienceDescriptionController.dispose();
+    _institutionController.dispose();
+    _yearCompletedController.dispose();
+    _fieldOfStudyController.dispose();
+    _certificationNameController.dispose();
+    _certificationIssuerController.dispose();
+    _certificationYearController.dispose();
+    _servicesDescriptionController.dispose();
+    _consultationFeeController.dispose();
+    _mpesaPaybillController.dispose();
+    _mpesaAccountController.dispose();
+    _mpesaTillController.dispose();
+    _bankNameController.dispose();
+    _bankAccountController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _addressController.dispose();
-    _specializationController.dispose();
-    _experienceController.dispose();
-    _bioController.dispose();
-    _consultationFeeController.dispose();
+    _physicalAddressController.dispose();
+    _poBoxController.dispose();
     super.dispose();
   }
 }

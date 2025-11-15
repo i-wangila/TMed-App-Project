@@ -60,20 +60,15 @@ class _FacilityProfileScreenState extends State<FacilityProfileScreen> {
             child: Column(
               children: [
                 _buildBasicInfo(),
-                _buildContactInfo(),
-                _buildWorkingHours(),
                 _buildServicesSection(),
-                if (facility!.departments.isNotEmpty)
-                  _buildDepartmentsSection(),
-                if (facility!.specialties.isNotEmpty)
-                  _buildSpecialtiesSection(),
-                _buildReviewsSection(),
-                _buildFacilitiesSection(),
                 _buildInsuranceSection(),
-                _buildCertificationsSection(),
+                _buildPaymentMethodsSection(),
+                _buildWorkingHours(),
+                _buildReviewsSection(),
+                _buildContactInfo(),
                 if (facility!.contactPersons.isNotEmpty)
                   _buildContactPersonsSection(),
-                const SizedBox(height: 32),
+                const SizedBox(height: 100),
               ],
             ),
           ),
@@ -339,110 +334,6 @@ class _FacilityProfileScreenState extends State<FacilityProfileScreen> {
     );
   }
 
-  Widget _buildDepartmentsSection() {
-    return _buildSection(
-      'Departments',
-      Icons.domain,
-      Column(
-        children: facility!.departments.map((department) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.local_hospital, color: Colors.green[700], size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    department,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.green[800],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildSpecialtiesSection() {
-    return _buildSection(
-      'Specialties',
-      Icons.star_border,
-      Column(
-        children: facility!.specialties.map((specialty) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Colors.orange,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    specialty,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.4,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildFacilitiesSection() {
-    return _buildSection(
-      'Facilities & Equipment',
-      Icons.build,
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: facility!.facilities.map((facilityItem) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.purple[50],
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.purple[200]!),
-            ),
-            child: Text(
-              facilityItem,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.purple[800],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildInsuranceSection() {
     return _buildSection(
       'Insurance Accepted',
@@ -472,32 +363,41 @@ class _FacilityProfileScreenState extends State<FacilityProfileScreen> {
     );
   }
 
-  Widget _buildCertificationsSection() {
+  Widget _buildPaymentMethodsSection() {
+    // For now, show common payment methods. This can be added to the facility model later
+    final paymentMethods = [
+      'Cash',
+      'M-Pesa',
+      'Credit/Debit Card',
+      'Insurance',
+      'Bank Transfer',
+    ];
+
     return _buildSection(
-      'Certifications & Accreditations',
-      Icons.verified,
-      Column(
-        children: facility!.certifications.map((certification) {
+      'Payment Methods',
+      Icons.payment,
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: paymentMethods.map((method) {
           return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.amber[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber[200]!),
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.green[200]!),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, color: Colors.amber[700], size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    certification,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.amber[800],
-                      fontWeight: FontWeight.w500,
-                    ),
+                Icon(Icons.check_circle, size: 16, color: Colors.green[700]),
+                const SizedBox(width: 6),
+                Text(
+                  method,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.green[800],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

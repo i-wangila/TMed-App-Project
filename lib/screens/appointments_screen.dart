@@ -43,38 +43,41 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         .where((apt) => apt.status == AppointmentStatus.cancelled)
         .length;
 
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: ResponsiveUtils.getResponsivePadding(context),
-            child: Text(
-              'My Bookings',
-              style: TextStyle(
-                fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: ResponsiveUtils.getResponsivePadding(context),
+              child: Text(
+                'My Bookings',
+                style: TextStyle(
+                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 20),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                children: [
-                  _buildTabBar(
-                    allCount,
-                    upcomingCount,
-                    completedCount,
-                    cancelledCount,
-                  ),
-                  Expanded(child: _buildTabContent()),
-                ],
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    _buildTabBar(
+                      allCount,
+                      upcomingCount,
+                      completedCount,
+                      cancelledCount,
+                    ),
+                    Expanded(child: _buildTabContent()),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -463,11 +466,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: ElevatedButton.icon(
+            child: OutlinedButton.icon(
               onPressed: () => _rateProvider(appointment),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: Colors.black),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -568,8 +571,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             child: OutlinedButton(
               onPressed: () => _rateProvider(appointment),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange,
-                side: const BorderSide(color: Colors.orange),
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: Colors.black),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -817,7 +820,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 messenger.showSnackBar(
                   const SnackBar(
                     content: Text('Appointment cancelled successfully'),
-                    backgroundColor: Colors.black,
+                    backgroundColor: Colors.green,
                   ),
                 );
               }
