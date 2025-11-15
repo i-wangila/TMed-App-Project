@@ -63,7 +63,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             'Klinate',
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 18),
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -216,7 +216,7 @@ class AboutScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: ResponsiveUtils.getResponsiveFontSize(
                       context,
-                      16,
+                      13,
                     ),
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -230,7 +230,7 @@ class AboutScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: ResponsiveUtils.getResponsiveFontSize(
                       context,
-                      14,
+                      12,
                     ),
                     color: Colors.grey[600],
                   ),
@@ -254,7 +254,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             'To democratize healthcare by leveraging technology to bridge the gap between patients and healthcare providers, ensuring that quality medical care is accessible to everyone, regardless of their location or circumstances.',
             style: TextStyle(
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 13),
               color: Colors.grey[700],
               height: 1.5,
               fontStyle: FontStyle.italic,
@@ -615,7 +615,7 @@ class AboutScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: ResponsiveUtils.getResponsiveFontSize(
                       context,
-                      20,
+                      15,
                     ),
                     fontWeight: FontWeight.bold,
                     color: Colors.black,

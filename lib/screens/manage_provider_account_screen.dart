@@ -6,6 +6,7 @@ import '../services/user_service.dart';
 import 'edit_provider_basic_info_screen.dart';
 import 'edit_provider_business_info_screen.dart';
 import 'edit_provider_professional_info_screen.dart';
+import 'edit_provider_availability_screen.dart';
 
 class ManageProviderAccountScreen extends StatefulWidget {
   final ProviderProfile providerProfile;
@@ -513,14 +514,21 @@ class _ManageProviderAccountScreenState
     }
   }
 
-  void _editAvailability() {
-    // TODO: Navigate to edit availability screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit availability - Coming soon'),
-        backgroundColor: Colors.blue,
+  void _editAvailability() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            EditProviderAvailabilityScreen(providerProfile: _profile),
       ),
     );
+
+    // Reload profile if changes were made
+    if (result == true) {
+      setState(() {
+        _profile = ProviderService.getProviderById(_profile.id) ?? _profile;
+      });
+    }
   }
 
   void _deactivateProviderAccount() {

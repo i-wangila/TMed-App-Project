@@ -1428,6 +1428,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       items: allHospitalsAndClinics
           .map(
             (facility) => {
+              'id': facility.id,
               'title': facility.name,
               'rating': facility.rating.toStringAsFixed(2),
               'imageUrl': facility.imageUrl,
@@ -1454,6 +1455,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       items: pharmacies
           .map(
             (facility) => {
+              'id': facility.id,
               'title': facility.name,
               'rating': facility.rating.toStringAsFixed(2),
               'imageUrl': facility.imageUrl,
@@ -1480,6 +1482,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       items: laboratories
           .map(
             (facility) => {
+              'id': facility.id,
               'title': facility.name,
               'rating': facility.rating.toStringAsFixed(2),
               'imageUrl': facility.imageUrl,

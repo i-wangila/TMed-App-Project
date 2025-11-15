@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/responsive_utils.dart';
+import 'facility_profile_screen.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String title;
@@ -304,11 +305,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     return GestureDetector(
       onTap: () {
-        // Handle card tap - navigate to specific item details
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Tapped on ${item['title']}'),
-            backgroundColor: Colors.blue,
+        // Navigate to facility profile screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FacilityProfileScreen(
+              facilityId: item['id'] ?? item['title'] ?? '',
+            ),
           ),
         );
       },

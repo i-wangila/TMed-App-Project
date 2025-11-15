@@ -888,7 +888,7 @@ class _ProviderAnalyticsScreenState extends State<ProviderAnalyticsScreen> {
           ],
           const SizedBox(height: 12),
           Text(
-            '${appointment.amount.toStringAsFixed(2)}',
+            appointment.amount.toStringAsFixed(2),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,

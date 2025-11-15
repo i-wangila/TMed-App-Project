@@ -118,16 +118,24 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
 
   Widget _buildTopNavBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: const BoxDecoration(color: Colors.white),
       child: Row(
         children: [
           // Navigation Items
-          _buildNavItem('Patient', 0),
-          _buildNavItem('Inbox', 1),
-          _buildNavItem('Appointments', 2),
-          _buildNavItem('Analytics', 3),
-          const Spacer(),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildNavItem('Patient', 0),
+                  _buildNavItem('Inbox', 1),
+                  _buildNavItem('Appointments', 2),
+                  _buildNavItem('Analytics', 3),
+                ],
+              ),
+            ),
+          ),
           // Notification icon with badge
           Stack(
             children: [
@@ -186,13 +194,14 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
     return InkWell(
       onTap: () => setState(() => _selectedNavIndex = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected ? Colors.black : Colors.grey[700],
               ),
@@ -201,7 +210,7 @@ class _ProviderDashboardScreenState extends State<ProviderDashboardScreen> {
               const SizedBox(width: 4),
               Icon(
                 Icons.keyboard_arrow_down,
-                size: 18,
+                size: 16,
                 color: Colors.grey[700],
               ),
             ],

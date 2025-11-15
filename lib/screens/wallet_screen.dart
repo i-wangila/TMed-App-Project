@@ -159,7 +159,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 : 'KES ****.**',
             style: TextStyle(
               color: Colors.black,
-              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
+              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
               fontWeight: FontWeight.bold,
             ),
           ),
